@@ -18,7 +18,7 @@ BacktestManager.run_backtest(
     start_time="2019-01-01",
     end_time="2024-06-21",
     timezone="Asia/Seoul",
-    strategy_name="MyStrategy",
+    strategy_name="DRLStrategy",
     commission=0.002,
     cash=100000,
     exclusive_orders=True
