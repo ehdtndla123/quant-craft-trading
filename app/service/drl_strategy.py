@@ -1,31 +1,17 @@
-from backtesting import Strategy
+from .DRL.env.drl_backtesting import Strategy
+# from backtesting import Strategy
 from .DRL.NN.td3_simple import TD3
 from .DRL.replaybuffer import ReplayBuffer
 from .DRL.storagemanager import StorageManager
 from .DRL.graph import Graph
+from .DRL.settings import MODEL_STORE_INTERVAL, GRAPH_DRAW_INTERVAL, N_TRAIN, LONG, \
+                        SHORT, CLOSE, HOLD, LIQUIFIED, DATA_DONE, DEMOCRATISATION
 
 import torch
 import numpy as np
 # import pandas as pd
 import time
 
-MODEL_STORE_INTERVAL = 100
-GRAPH_DRAW_INTERVAL = 10
-
-N_TRAIN = 500
-
-# Define Actions
-LONG = 0
-SHORT = 1
-CLOSE = 3
-HOLD = 4
-
-# Done States
-LIQUIFIED = 0
-DATA_DONE = 1
-
-# Reward Value
-DEMOCRATISATION = -10000
 
 class DRLStrategy(Strategy):
     def init(self):
@@ -34,6 +20,9 @@ class DRLStrategy(Strategy):
         self.price_state = self.data.Close
         self.init_balance = 1000 #USDT
         self.state_size = N_TRAIN
+
+        self.is_data_done = False
+        self.is_liquified = False
 
         self.previous_state = None
         self.current_balance = 0
@@ -105,17 +94,14 @@ class DRLStrategy(Strategy):
         elif current_action == SHORT:
             self.sell()
         elif current_action == CLOSE:
-            # TODO Close order
-            pass
+            self.position.close()
 
-        is_data_done = False
-        is_liquified = False
-        if self.equity == 0:
-            is_liquified = True
+        # if self.equity == 0:
+        #     self.is_liquified = True
 
-        rw = self.reward(current_action, is_liquified)
+        rw = self.reward(current_action, self.is_liquified)
 
-        return state, rw, current_action, (is_data_done or is_liquified)
+        return state, rw, current_action, (self.is_data_done or self.is_liquified)
 
 
     def next(self):
@@ -145,6 +131,7 @@ class DRLStrategy(Strategy):
                 self.loss_actor += loss_a
 
         self.step += 1
+        # print(self.step, ', ', action)
 
         if is_episode_done:
             self.episode += 1
@@ -161,10 +148,12 @@ class DRLStrategy(Strategy):
 
             self.reward_sum = 0.0
             self.step = 0
-            self.action_history[0, 0, 0, 0]
+            self.action_history = [0, 0, 0, 0]
             self.current_balance = 0
             self.previous_balance = 0
             self.previous_state = None
+            self.is_liquified = False
+            self.is_data_done = False
 
             if (self.episode % MODEL_STORE_INTERVAL == 0) or (self.episode == 1):
                 self.sm.save_session(self.episode, self.agent.networks, self.graph.graphdata, self.replay_buffer.buffer)

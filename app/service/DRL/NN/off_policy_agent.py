@@ -12,7 +12,7 @@ class OffPolicyAgent(ABC):
 
         # Network structure
         self.state_size         = 500 * 5 # Could add more states on environment.py(also environment_real.py)
-        self.action_size        = 3
+        self.action_size        = 4
         self.hidden_size        = 512
         self.input_size         = self.state_size
         # Hyperparameters
