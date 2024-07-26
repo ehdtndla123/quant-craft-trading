@@ -13,3 +13,12 @@ venv/
 
 # Logs
 *.log
+
+# Local DRL models
+Sunghjops-MacBook-Pro-2.local/
+
+# Local Trained html
+*.html
+
+# .DS_Store for macOS
+.DS_Store

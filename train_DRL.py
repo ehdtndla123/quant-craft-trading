@@ -10,12 +10,12 @@
 #     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
-from app.service.backtest import BacktestManager
+from app.service.backtest_train import BacktestManager
 BacktestManager.run_backtest(
     exchange_name="binance",
     symbol="BTC/USDT",
-    timeframe="1d",
-    start_time="2021-05-01",
+    timeframe="1m",
+    start_time="2019-01-01",
     end_time="2024-06-21",
     timezone="Asia/Seoul",
     strategy_name="DRLStrategy",
