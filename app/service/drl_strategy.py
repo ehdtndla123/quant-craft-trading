@@ -91,10 +91,15 @@ class DRLStrategy(Strategy):
 
         if current_action == LONG:
             self.buy()
+            self.action_history[LONG] += 1
         elif current_action == SHORT:
             self.sell()
+            self.action_history[SHORT] += 1
         elif current_action == CLOSE:
             self.position.close()
+            self.action_history[CLOSE] += 1
+        else:
+            self.action_history[HOLD] += 1
 
         # if self.equity == 0:
         #     self.is_liquified = True
