@@ -85,7 +85,7 @@ class DRLStrategy(Strategy):
 
 
     def take_step(self, action):
-        current_action = np.argmin(action)
+        current_action = np.argmax(action)
 
         state = self.get_state()
 
