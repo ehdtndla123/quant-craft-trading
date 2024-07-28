@@ -11,14 +11,23 @@
 
 
 from app.service.backtest import BacktestManager
-BacktestManager.run_backtest(
+from app.service.data_loader import DataLoader
+
+data = DataLoader.save_data_from_ccxt(
     exchange_name="binance",
     symbol="BTC/USDT",
-    timeframe="1d",
-    start_time="2021-05-01",
-    end_time="2024-06-21",
-    timezone="Asia/Seoul",
-    strategy_name="DRLStrategy",
+    timeframe="1m",
+    start_time="2024-07-01",
+    end_time="2024-07-24",
+    timezone="UTC"
+)
+
+
+
+BacktestManager.run_backtest(
+    data=data,
+    exchange_name="binance",
+    strategy_name="MyStrategy",
     commission=0.002,
     cash=100000,
     exclusive_orders=True
