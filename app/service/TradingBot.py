@@ -4,7 +4,9 @@ import traceback
 
 import ccxt.pro as ccxt
 import pandas as pd
-from backtesting.backtesting import _Broker, Strategy, _Data
+from app.model.Broker import Broker as _Broker
+from app.model.Strategy import Strategy
+from backtesting.backtesting import _Data
 from backtesting.backtesting import partial
 
 

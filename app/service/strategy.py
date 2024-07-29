@@ -1,4 +1,5 @@
-from backtesting import Strategy
+# from backtesting import Strategy
+from app.model.Strategy import Strategy
 from backtesting.lib import crossover
 from backtesting.test import SMA
 
@@ -13,3 +14,4 @@ class MyStrategy(Strategy):
             self.buy()
         elif crossover(self.ma2, self.ma1):
             self.sell()
+        self.buy()
