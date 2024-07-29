@@ -13,10 +13,10 @@ from backtesting._plotting import plot
 from backtesting._stats import compute_stats
 from backtesting._util import _Indicator, _Data, try_
 from numpy.random import default_rng
-from Strategy import Strategy
-from Broker import Broker
-from Trade import Trade
-from Exception import _OutOfMoneyError
+from .Strategy import Strategy
+from .BacktestBroker import Broker
+from .Trade import Trade
+from .Exception import _OutOfMoneyError
 
 try:
     from tqdm.auto import tqdm as _tqdm

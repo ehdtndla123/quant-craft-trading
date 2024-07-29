@@ -1,5 +1,5 @@
 import numpy as np
-from Broker import Broker
+from .Broker import Broker
 
 class Position:
     """

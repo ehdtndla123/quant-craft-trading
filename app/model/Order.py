@@ -1,20 +1,11 @@
-import multiprocessing as mp
-import os
-import sys
-import warnings
-from abc import abstractmethod, ABCMeta
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from copy import copy
-from functools import lru_cache, partial
-from itertools import repeat, product, chain, compress
-from math import copysign
-from numbers import Number
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Optional
 
-import numpy as np
-import pandas as pd
-from numpy.random import default_rng
-
+__pdoc__ = {
+    'Strategy.__init__': False,
+    'Order.__init__': False,
+    'Position.__init__': False,
+    'Trade.__init__': False,
+}
 class Order:
     """
     Place new orders through `Strategy.buy()` and `Strategy.sell()`.

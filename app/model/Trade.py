@@ -1,7 +1,7 @@
 from copy import copy
 from math import copysign
 from typing import Optional, Union
-from Order import Order
+from .Order import Order
 import numpy as np
 import pandas as pd
 
