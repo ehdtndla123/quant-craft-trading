@@ -1,6 +1,6 @@
 from .DRL.env.drl_backtesting import Strategy
 # from backtesting import Strategy
-from .DRL.NN.td3_simple import TD3
+from .DRL.NN.td3 import TD3
 from .DRL.replaybuffer import ReplayBuffer
 from .DRL.storagemanager import StorageManager
 from .DRL.graph import Graph
@@ -25,6 +25,7 @@ class DRLStrategy(Strategy):
         self.is_liquified = False
 
         self.previous_state = None
+        self.previous_action = HOLD
         self.current_balance = 0
         self.previous_balance = 0
 
@@ -63,22 +64,29 @@ class DRLStrategy(Strategy):
     # def get_state(arr: pd.Series, n: int) -> pd.Series:
     #     return pd.Series(arr)[n:]
     def get_state(self):
-        return np.array([self.data.Open[:self.state_size], self.data.Close[:self.state_size], self.data.High[:self.state_size],
-                    self.data.Low[:self.state_size], self.data.Volume[:self.state_size]])
+        return np.append(np.array([self.data.Open[:self.state_size], self.data.Close[:self.state_size], self.data.High[:self.state_size],
+                    self.data.Low[:self.state_size], self.data.Volume[:self.state_size]]).flatten(), self.previous_action)
 
     def reward(self, current_action, is_liq):
         rw = 0
 
         if current_action == LONG:
-            rw += 10
+            if self.previous_action == current_action:
+                rw -= 5
+            else:
+                rw += 10
         elif current_action == SHORT:
-            rw += 10
+            if self.previous_action == current_action:
+                rw -= 5
+            else:
+                rw += 10
         elif current_action == CLOSE or current_action == HOLD:
             rw -= 1
 
         rw += (self.current_balance - self.previous_balance) * 10
 
         if is_liq:
+            print("Liquifided!!")
             rw += DEMOCRATISATION
 
         return rw
@@ -122,6 +130,7 @@ class DRLStrategy(Strategy):
         self.current_balance = self.equity
         action = self.agent.get_action(state, self.step, False)
         state, reward, current_action, is_episode_done = self.take_step(action)
+        self.previous_action = current_action
         state = torch.tensor(state).flatten().detach().cpu().to(dtype=torch.float)
         self.reward_sum += reward
         self.action_history[current_action] += 1
@@ -136,7 +145,7 @@ class DRLStrategy(Strategy):
                 self.loss_actor += loss_a
 
         self.step += 1
-        # print(self.step, ', ', action)
+        # print(self.step, ', ', action, ', Liquified: ', self.is_liquified, ', Data Done: ', self.is_data_done)
 
         if is_episode_done:
             self.episode += 1

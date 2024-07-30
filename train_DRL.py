@@ -14,14 +14,16 @@ from app.service.backtest_train import BacktestManager
 BacktestManager.run_backtest(
     exchange_name="binance",
     symbol="BTC/USDT",
-    timeframe="1m",
+    timeframe="1d",
     start_time="2019-01-01",
     end_time="2024-06-21",
     timezone="Asia/Seoul",
     strategy_name="DRLStrategy",
     commission=0.002,
     cash=100000,
-    exclusive_orders=True
+    exclusive_orders=True,
+    margin=0.2
+    # margin=0.01
 )
 
 # bt.plot(

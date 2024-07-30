@@ -18,6 +18,7 @@ class BacktestManager:
             commission: float,
             cash: float,
             exclusive_orders: bool,
+            margin: float,
             **kwargs
     ):
         data = DataLoader.load_data_from_ccxt(
@@ -35,7 +36,7 @@ class BacktestManager:
         StrategyClass = getattr(strategy_module, strategy_name)
 
         bt = Backtest(data, StrategyClass, commission=commission, cash=cash,
-                      exclusive_orders=exclusive_orders, **kwargs)
+                      exclusive_orders=exclusive_orders, margin=margin,**kwargs)
         stats = bt.run()
         pprint.pprint(stats)
         bt.plot()

@@ -1169,6 +1169,8 @@ class Backtest:
                     try:
                         broker.next()
                     except _OutOfMoneyError:
+                        for trade in broker.trades:
+                            trade.close()
                         liquified(strategy)
                         break
 
@@ -1198,9 +1200,13 @@ class Backtest:
                     strategy_instance=strategy,
                 )
                 episode += 1
-                if episode % MODEL_STORE_INTERVAL == 0:
+                if episode % MODEL_STORE_INTERVAL == 0 or episode == 1:
                     pprint.pprint(self._results)
-                    self.plot()
+                    print(episode)
+                    try:
+                        self.plot()
+                    except:
+                        print('Liquifieded...')
 
         # return self._results
 
