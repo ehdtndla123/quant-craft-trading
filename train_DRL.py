@@ -16,14 +16,15 @@ BacktestManager.run_backtest(
     symbol="BTC/USDT",
     timeframe="1d",
     start_time="2019-01-01",
-    end_time="2024-06-21",
+    # start_time="2024-07-27",
+    end_time="2024-07-30",
     timezone="Asia/Seoul",
     strategy_name="DRLStrategy",
     commission=0.002,
     cash=100000,
     exclusive_orders=True,
-    margin=0.2
-    # margin=0.01
+    # margin=0.2
+    margin=0.05
 )
 
 # bt.plot(

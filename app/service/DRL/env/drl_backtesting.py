@@ -1096,7 +1096,7 @@ class Backtest:
         self._strategy = strategy
         self._results: Optional[pd.Series] = None
 
-    def run(self, **kwargs) -> pd.Series:
+    def run(self, agent=None, **kwargs) -> pd.Series:
         """
         Run the backtest. Returns `pd.Series` with results and statistics.
 
@@ -1139,7 +1139,7 @@ class Backtest:
         broker: _Broker = self._broker(data=data)
         strategy: Strategy = self._strategy(broker, data, kwargs)
 
-        strategy.init()
+        strategy.init(agent)
         data._update()  # Strategy.init might have changed/added to data.df
 
         # Indicators used in Strategy.next()
@@ -1156,59 +1156,60 @@ class Backtest:
         # np.nan >= 3 is not invalid; it's False.
         with np.errstate(invalid='ignore'):
 
-            episode = 0
-            while True:
-                for i in range(start, len(self._data)):
-                    # Prepare data and indicators for `next` call
-                    data._set_length(i + 1)
-                    for attr, indicator in indicator_attrs:
-                        # Slice indicator on the last dimension (case of 2d indicator)
-                        setattr(strategy, attr, indicator[..., :i + 1])
+            # episode = 0
+            # while True:
+            for i in range(start, len(self._data)):
+                # Prepare data and indicators for `next` call
+                data._set_length(i + 1)
+                for attr, indicator in indicator_attrs:
+                    # Slice indicator on the last dimension (case of 2d indicator)
+                    setattr(strategy, attr, indicator[..., :i + 1])
 
-                    # Handle orders processing and broker stuff
-                    try:
-                        broker.next()
-                    except _OutOfMoneyError:
-                        for trade in broker.trades:
-                            trade.close()
-                        liquified(strategy)
-                        break
-
-                    # Next tick, a moment before bar close
-                    strategy.next()
-                else:
-                    # Close any remaining open trades so they produce some stats
+                # Handle orders processing and broker stuff
+                try:
+                    broker.next()
+                except _OutOfMoneyError:
+                    # print("DEBUG : Liquifided!!")
                     for trade in broker.trades:
                         trade.close()
-                    trade_done(strategy)
+                    liquified(strategy)
+                    try_(broker.next, exception=_OutOfMoneyError)
+                    break
 
-                    # Re-run broker one last time to handle orders placed in the last strategy
-                    # iteration. Use the same OHLC values as in the last broker iteration.
-                    if start < len(self._data):
-                        try_(broker.next, exception=_OutOfMoneyError)
+                # Next tick, a moment before bar close
+                strategy.next()
+            else:
+                # Close any remaining open trades so they produce some stats
+                for trade in broker.trades:
+                    trade.close()
+                trade_done(strategy)
 
-                # Set data back to full length
-                # for future `indicator._opts['data'].index` calls to work
-                data._set_length(len(self._data))
+                # Re-run broker one last time to handle orders placed in the last strategy
+                # iteration. Use the same OHLC values as in the last broker iteration.
+                if start < len(self._data):
+                    try_(broker.next, exception=_OutOfMoneyError)
 
-                equity = pd.Series(broker._equity).bfill().fillna(broker._cash).values
-                self._results = compute_stats(
-                    trades=broker.closed_trades,
-                    equity=equity,
-                    ohlc_data=self._data,
-                    risk_free_rate=0.0,
-                    strategy_instance=strategy,
-                )
-                episode += 1
-                if episode % MODEL_STORE_INTERVAL == 0 or episode == 1:
-                    pprint.pprint(self._results)
-                    print(episode)
-                    try:
-                        self.plot()
-                    except:
-                        print('Liquifieded...')
+            # Set data back to full length
+            # for future `indicator._opts['data'].index` calls to work
+            data._set_length(len(self._data))
 
-        # return self._results
+            equity = pd.Series(broker._equity).bfill().fillna(broker._cash).values
+            self._results = compute_stats(
+                trades=broker.closed_trades,
+                equity=equity,
+                ohlc_data=self._data,
+                risk_free_rate=0.0,
+                strategy_instance=strategy,
+            )
+                # episode += 1
+                # if episode % (MODEL_STORE_INTERVAL//5) == 0 or episode == 1:
+                #     pprint.pprint(self._results)
+                #     print(episode)
+                #     self.plot()
+
+                # broker = self._broker(data=data)
+
+        return self._results
 
     def optimize(self, *,
                  maximize: Union[str, Callable[[pd.Series], float]] = 'SQN',

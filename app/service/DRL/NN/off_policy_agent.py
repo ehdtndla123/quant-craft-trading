@@ -18,7 +18,7 @@ class OffPolicyAgent(ABC):
         self.hidden_size        = 512
         self.input_size         = self.state_size
         # Hyperparameters
-        self.batch_size         = 512
+        self.batch_size         = 2 ** 9
         self.buffer_size        = 1000000
         self.discount_factor    = 0.99
         self.learning_rate      = 0.001

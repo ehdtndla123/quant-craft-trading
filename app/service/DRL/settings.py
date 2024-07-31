@@ -14,10 +14,11 @@ LIQUIFIED = 0
 DATA_DONE = 1
 
 # Reward Value
-DEMOCRATISATION = -10000
+DEMOCRATISATION = -100000
 
-def trade_done(agent_self):
-    agent_self.is_data_done = True
+def trade_done(env_self):
+    env_self.is_data_done = True
 
-def liquified(agent_self):
-    agent_self.is_liquified = True
+def liquified(env_self):
+    env_self.is_liquified = True
+    env_self.finish_episode()
