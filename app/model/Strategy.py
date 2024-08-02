@@ -22,7 +22,7 @@ class Strategy(metaclass=ABCMeta):
     def __init__(self, broker, data, params):
         self._indicators = []
         self._broker: Broker = broker
-        self._data: _Data = data
+        self._data = data
         self._params = self._check_params(params)
 
     def __repr__(self):
@@ -200,7 +200,7 @@ class Strategy(metaclass=ABCMeta):
         return self._broker.equity
 
     @property
-    def data(self) -> _Data:
+    def data(self) -> pd.DataFrame:
         """
         Price data, roughly as passed into
         `backtesting.backtesting.Backtest.__init__`,
@@ -247,3 +247,7 @@ class Strategy(metaclass=ABCMeta):
     def closed_trades(self) -> 'Tuple[Trade, ...]':
         """List of settled trades (see `Trade`)."""
         return tuple(self._broker.closed_trades)
+
+    def update_data(self, new_data: pd.DataFrame):
+        """실시간으로 데이터 업데이트"""
+        self._data = new_data.reset_index(drop=True)  # 인덱스 리셋

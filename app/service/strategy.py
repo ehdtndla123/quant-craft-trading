@@ -2,6 +2,8 @@
 from app.model.Strategy import Strategy
 from backtesting.lib import crossover
 from backtesting.test import SMA
+import pandas as pd
+
 
 class MyStrategy(Strategy):
     def init(self):
@@ -14,4 +16,7 @@ class MyStrategy(Strategy):
             self.buy()
         elif crossover(self.ma2, self.ma1):
             self.sell()
-        self.buy()
+
+    def update_data(self, new_data: pd.DataFrame):
+        super().update_data(new_data)
+        self.init()
