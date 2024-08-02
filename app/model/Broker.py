@@ -26,8 +26,6 @@ class Broker:
         self._hedging = hedging
         self._exclusive_orders = exclusive_orders
 
-        print("수정함")
-        # self._equity = np.tile(np.nan, len(index))
         self._equity = []
         self.orders: List[Order] = []
         self.trades: List[Trade] = []
@@ -36,12 +34,7 @@ class Broker:
 
     def update_data(self, new_data: pd.DataFrame):
         """실시간으로 데이터 업데이트"""
-        # _Data 객체의 내부 구조에 따라 데이터 업데이트
         self._data = new_data.reset_index(drop=True)  # 인덱스 리셋
-
-        # print(self._data)
-        # self._data._set_length(len(new_data))
-        # self._data._update()
 
     def __repr__(self):
         return f'<Broker: {self._cash:.0f}{self.position.pl:+.1f} ({len(self.trades)} trades)>'
@@ -97,7 +90,6 @@ class Broker:
     @property
     def last_price(self) -> float:
         """ Price at the last (current) close. """
-        print("수정함")
         return self._data["Close"].iloc[-1]
 
     def _adjusted_price(self, size=None, price=None) -> float:
@@ -105,8 +97,6 @@ class Broker:
         Long/short `price`, adjusted for commisions.
         In long positions, the adjusted price is a fraction higher, and vice versa.
         """
-        print(f"size: {size}, price: {price}")
-        print(f"price: {price}, last_price: {self.last_price}")
         return (price or self.last_price) * (1 + copysign(self._commission, size))
 
     @property
@@ -125,8 +115,6 @@ class Broker:
 
         # Log account equity for the equity curve
         equity = self.equity
-        print("수정함")
-        # self._equity[i] = equity
         self._equity.append(equity)
 
         # If equity is negative, set all to 0 and stop the simulation
@@ -141,13 +129,7 @@ class Broker:
     def _process_orders(self):
         data = self._data
 
-        # if data.empty or len(data) < 2:
-        #     print("Not enough data to process orders")
-        #     return
 
-        print("수정한부분")
-        # open, high, low = data.Open[-1], data.High[-1], data.Low[-1]
-        # prev_close = data.Close[-2]
         open = data['Open'].iloc[-1]
         high = data['High'].iloc[-1]
         low = data['Low'].iloc[-1]
