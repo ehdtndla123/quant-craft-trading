@@ -20,15 +20,13 @@ class TradingBot:
         self.data = pd.DataFrame(columns=['Open', 'High', 'Low', 'Close', 'Volume'])
         self.is_running = False
 
-        self._data = _Data(self.data)  # _Data 객체 생성
-
         self._broker = partial(
-            _Broker, cash=initial_cash, commission=commission, margin=1.,
-            trade_on_close=False, hedging=False,
-            exclusive_orders=False, index=self.data.index,
+            _Broker, cash=initial_cash, commission=commission, margin=0.05,
+            trade_on_close=False, hedging=True,
+            exclusive_orders=True, index=self.data.index,
         )
 
-        self.broker: _Broker = self._broker(data=self._data)
+        self.broker: _Broker = self._broker(data=self.data)
 
         strategy_module = importlib.import_module("app.service.strategy")
         self.strategy = getattr(strategy_module, strategy_name)
@@ -42,7 +40,7 @@ class TradingBot:
             if self.exchange.has['watchOHLCV']:
                 try:
                     candles = await self.exchange.watch_ohlcv(self.symbol, self.timeframe, None, 1)
-                    print(self.exchange.iso8601(self.exchange.milliseconds()), candles)
+                    # print(self.exchange.iso8601(self.exchange.milliseconds()), candles)
                     for candle in candles:
                         timestamp, open_price, high, low, close, volume = candle
                         if last_timestamp is None or timestamp >= last_timestamp + self.timeframe_to_seconds() * 1000:
@@ -58,11 +56,6 @@ class TradingBot:
                                 self.data = pd.concat([self.data, new_row])
                                 self.data = self.data.sort_index()
                                 self.data = self.data.tail(100)
-
-                                # 브로커와 전략의 데이터 갱신
-                                print("Updating data...")
-                                self.broker.update_data(self.data)
-                                print("Data updated.")
 
                                 if len(self.data) >= 2:
                                     self.execute_strategy()
@@ -89,35 +82,27 @@ class TradingBot:
 
     def execute_strategy(self, **kwargs):
         if self._strategy is None:
-            print("Initializing the strategy...")
-            self._strategy = self.strategy
-            strategy: Strategy = self._strategy(self.broker, self._data, kwargs)
-            self.strategy = strategy
-            strategy.init()
+            self._strategy = self.strategy(self.broker, self.data, kwargs)
+            self._strategy.init()
 
-        print("Executing the strategy...")
-        self.broker.next()  # 브로커의 next 메서드 호출
-        self.strategy.next()
-        print("Strategy executed.")
+        self.broker.update_data(self.data)
+        self._strategy.update_data(self.data)
 
+        self.broker.next()
+        self._strategy.next()
         # 현재 상태 출력
-        print(f"Timestamp: {self.data.index[-1]}")
-        print(f"Price: {self.data['Close'].iloc[-1]}")
-        print("---")
-        print("=== Broker 상태 출력 ===")
+        print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Broker 상태 출력 @@@@@@@@@@@@@@@@@@@@@@@@@@@@")
         print(f"Cash: {self.broker._cash}")
         print(f"Position Size: {self.broker.position.size}")
         print(f"Equity: {self.broker.equity}")
-        print(f"Open Orders: {len(self.broker.orders)}")
-        print(f"Active Trades: {len(self.broker.trades)}")
-        print(f"Closed Trades: {len(self.broker.closed_trades)}")
-        print("=== Broker 상태 출력 ===")
-        print(self.broker.orders)
-        print(self.broker.trades)
-        print(self.broker.closed_trades)
-
+        print("\n=====================All Orders=====================")
         self.print_all_orders()
-        self.print_trades()
+        print("\n=====================Closed Trades=====================")
+        self.print_trades(self.broker.closed_trades)
+        print("\n=====================Active Trades=====================")
+        self.print_trades(self.broker.trades)
+        print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+
 
     def print_all_orders(self):
         orders = self.broker.orders
@@ -144,8 +129,7 @@ class TradingBot:
 
         print(f"\nTotal Orders: {len(orders)}")
 
-    def print_trades(self):
-        trades = self.broker.trades
+    def print_trades(self, trades):
         if isinstance(trades, pd.DataFrame):
             trades_df = trades
         else:
