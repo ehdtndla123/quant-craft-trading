@@ -9,6 +9,7 @@ from .DRL.NN.td3_simple import TD3
 from .DRL.replaybuffer import ReplayBuffer
 from .DRL.storagemanager import StorageManager
 from .DRL.graph import Graph
+from .DRL.logger import Logger
 from .DRL.settings import MODEL_STORE_INTERVAL, GRAPH_DRAW_INTERVAL, N_TRAIN, LONG, \
                         SHORT, CLOSE, HOLD, LIQUIFIED, DATA_DONE, DEMOCRATISATION
 
@@ -51,7 +52,7 @@ class BacktestManager:
                     exclusive_orders=exclusive_orders, margin=margin, **kwargs)
 
         # try:
-        A = Agent()
+        A = Agent(symbol)
         episode = 0
         while True:
             stats = bt.run(A)
@@ -64,7 +65,8 @@ class BacktestManager:
         #     return stats
 
 class Agent:
-    def __init__(self):
+    def __init__(self, symbol):
+        self.training = True
         self.state_size = N_TRAIN
         self.device = self.get_device()
 
@@ -84,6 +86,9 @@ class Agent:
         self.replay_buffer = ReplayBuffer(self.model.buffer_size)
         self.episode, self.loss_critic, self.loss_actor, self.total_step = 0, 0, 0, 0
         self.episode_start = time.perf_counter()
+
+        # Create Logger
+        self.logger = Logger(self.training, self.sm.machine_dir, self.sm.session_dir, self.sm.session, self.model.get_model_parameters(), self.model.get_model_configuration(), symbol, "td3", self.episode)
 
     def get_device(self):
         if torch.cuda.is_available():

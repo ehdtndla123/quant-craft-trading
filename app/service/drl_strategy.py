@@ -117,8 +117,14 @@ class DRLStrategy(Strategy):
         print(f"buy: {self.action_history[LONG]} sell: {self.action_history[SHORT]} close:{self.action_history[CLOSE]} hold: {self.action_history[HOLD]}")
         print(f"steps: {self.step:<6} steps_total: {self.agent.total_step:<7}time: {duration:<6.2f}\n")
 
-        if self.is_training:
-            self.agent.graph.update_data(self.step, self.agent.total_step, final_balance, self.reward_sum, self.agent.loss_critic, self.agent.loss_actor)
+        if (not self.is_training):
+            self.agent.logger.update_test_results(self.step, final_balance if final_balance > 0 else "Liquifieded", duration)
+            return
+
+        self.agent.graph.update_data(self.step, self.agent.total_step, final_balance, self.reward_sum, self.agent.loss_critic, self.agent.loss_actor)
+        self.agent.logger.file_log.write(f"{self.agent.episode}, {self.reward_sum}, {final_balance if final_balance > 0 else "Liquifieded"}, {duration}, {self.step}, {self.agent.total_steps}, \
+                                {self.agent.replay_buffer.get_length()}, {self.agent.loss_critic / self.step}, {self.agent.lost_actor / self.step}\n")
+
 
         if (self.agent.episode % MODEL_STORE_INTERVAL == 0) or (self.agent.episode == 1):
             self.agent.sm.save_session(self.agent.episode, self.agent.model.networks, self.agent.graph.graphdata, self.agent.replay_buffer.buffer)
