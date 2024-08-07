@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Broker Status</title>
+    <link rel="stylesheet" href="{{ request.url_for('static', path='/styles.css') }}">
+</head>
+<body>
+    <div id="app">
+        <h1>Broker Status</h1>
+        <div id="status">
+            <p>Cash: <span id="cash"></span></p>
+            <p>Position: <span id="position"></span></p>
+            <p>Equity: <span id="equity"></span></p>
+        </div>
+        <h2>Open Orders</h2>
+        <table id="orders">
+            <thead>
+                <tr>
+                    <th>Size</th>
+                    <th>Limit Price</th>
+                    <th>Stop Price</th>
+                    <th>SL Price</th>
+                    <th>TP Price</th>
+                    <th>Is Long</th>
+                    <th>Is Short</th>
+                    <th>Is Contingent</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <h2>Trades</h2>
+        <table id="trades">
+            <thead>
+                <tr>
+                    <th>Size</th>
+                    <th>Entry Price</th>
+                    <th>Exit Price</th>
+                    <th>PnL</th>
+                    <th>Return %</th>
+                    <th>Entry Time</th>
+                    <th>Exit Time</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <h2>Trade Statistics</h2>
+        <div id="trade-stats"></div>
+    </div>
+    <script src="{{ request.url_for('static', path='/script.js') }}"></script>
+</body>
+</html>
