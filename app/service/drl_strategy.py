@@ -1,7 +1,7 @@
 from .DRL.env.drl_backtesting import Strategy
 # from backtesting import Strategy
 from .DRL.settings import MODEL_STORE_INTERVAL, GRAPH_DRAW_INTERVAL, N_TRAIN, LONG, \
-                        SHORT, CLOSE, HOLD, LIQUIFIED, DATA_DONE, DEMOCRATISATION
+                        SHORT, CLOSE, HOLD, LIQUIFIED, DATA_DONE, DEMOCRATISATION, INDICATOR_NUM
 
 import torch
 import numpy as np
@@ -20,25 +20,25 @@ class DRLStrategy(Strategy):
         self.current_balance = 0
         self.previous_balance = 0
         self.previous_state = None
-        self.previous_action = HOLD
+        self.previous_action = [HOLD] * self.agent.state_size
         self.is_liquified = False
         self.is_data_done = False
         self.episode_start = time.perf_counter()
 
     def get_state(self):
-        return np.append(np.array([self.data.Open[:self.agent.state_size], self.data.Close[:self.agent.state_size], self.data.High[:self.agent.state_size],
-                    self.data.Low[:self.agent.state_size], self.data.Volume[:self.agent.state_size]]).flatten(), self.previous_action)
+        return np.array([self.data.Open[:self.agent.state_size], self.data.Close[:self.agent.state_size], self.data.High[:self.agent.state_size],
+                    self.data.Low[:self.agent.state_size], self.data.Volume[:self.agent.state_size], self.previous_action])
 
     def reward(self, current_action, is_liq):
         rw = 0
 
         if current_action == LONG:
-            if self.previous_action == current_action:
+            if self.previous_action[-1] == current_action:
                 rw -= 5
             else:
                 rw += 10
         elif current_action == SHORT:
-            if self.previous_action == current_action:
+            if self.previous_action[-1] == current_action:
                 rw -= 5
             else:
                 rw += 10
@@ -82,13 +82,14 @@ class DRLStrategy(Strategy):
     def next(self):
         if len(self.data) < N_TRAIN + 1:
             return
-        state = torch.tensor(self.get_state()).flatten().detach().cpu().to(dtype=torch.float)
+        state = torch.tensor(self.get_state()).detach().cpu().to(dtype=torch.float)
         self.previous_balance = self.current_balance
         self.current_balance = self.equity
         action = self.agent.model.get_action(state, self.step, False)
         state, reward, current_action, is_episode_done = self.take_step(action)
-        self.previous_action = current_action
-        state = torch.tensor(state).flatten().detach().cpu().to(dtype=torch.float)
+        del self.previous_action[0]
+        self.previous_action.append(current_action)
+        state = torch.tensor(state).detach().cpu().to(dtype=torch.float)
         self.reward_sum += reward
         self.action_history[current_action] += 1
         self.previous_state = state
@@ -122,8 +123,8 @@ class DRLStrategy(Strategy):
             return
 
         self.agent.graph.update_data(self.step, self.agent.total_step, final_balance, self.reward_sum, self.agent.loss_critic, self.agent.loss_actor)
-        self.agent.logger.file_log.write(f"{self.agent.episode}, {self.reward_sum}, {final_balance if final_balance > 0 else "Liquifieded"}, {duration}, {self.step}, {self.agent.total_steps}, \
-                                {self.agent.replay_buffer.get_length()}, {self.agent.loss_critic / self.step}, {self.agent.lost_actor / self.step}\n")
+        self.agent.logger.file_log.write(f"{self.agent.episode}, {self.reward_sum}, {final_balance if final_balance > 0 else "Liquifieded"}, {duration}, {self.step}, {self.agent.total_step}, \
+                                {self.agent.replay_buffer.get_length()}, {self.agent.loss_critic / self.step}, {self.agent.loss_actor / self.step}\n")
 
 
         if (self.agent.episode % MODEL_STORE_INTERVAL == 0) or (self.agent.episode == 1):

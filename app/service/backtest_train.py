@@ -5,13 +5,13 @@ import importlib
 from app.service.data_loader import DataLoader
 
 
-from .DRL.NN.td3_simple import TD3
+from .DRL.NN.td3_xLSTM import TD3
 from .DRL.replaybuffer import ReplayBuffer
 from .DRL.storagemanager import StorageManager
 from .DRL.graph import Graph
 from .DRL.logger import Logger
 from .DRL.settings import MODEL_STORE_INTERVAL, GRAPH_DRAW_INTERVAL, N_TRAIN, LONG, \
-                        SHORT, CLOSE, HOLD, LIQUIFIED, DATA_DONE, DEMOCRATISATION
+                        SHORT, CLOSE, HOLD, LIQUIFIED, DATA_DONE, DEMOCRATISATION, get_device
 
 import torch
 import numpy as np
@@ -68,7 +68,7 @@ class Agent:
     def __init__(self, symbol):
         self.training = True
         self.state_size = N_TRAIN
-        self.device = self.get_device()
+        self.device = get_device()
 
         # Create DRL Agent
         self.model = TD3(self.device)
@@ -89,16 +89,3 @@ class Agent:
 
         # Create Logger
         self.logger = Logger(self.training, self.sm.machine_dir, self.sm.session_dir, self.sm.session, self.model.get_model_parameters(), self.model.get_model_configuration(), symbol, "td3", self.episode)
-
-    def get_device(self):
-        if torch.cuda.is_available():
-            device = torch.device('cuda')
-            print(f"CUDA is available. Using GPU: {torch.cuda.get_device_name(device)}")
-        elif torch.backends.mps.is_available():
-            device = torch.device('mps')
-            print("MPS is available. Using GPU on macOS.")
-        else:
-            device = torch.device('cpu')
-            print("No GPU found. Using CPU.")
-
-        return device

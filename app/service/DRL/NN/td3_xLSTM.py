@@ -5,12 +5,13 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 
+from .xLSTM.xLSTM import xLSTM
+
 from .ounoise import OUNoise
 
 from .off_policy_agent import OffPolicyAgent, Network
-import math
 
-from ..settings import INDICATOR_NUM
+from ..settings import BATCH_SIZE, INDICATOR_NUM, get_device
 
 LINEAR = 0
 ANGULAR = 1
@@ -24,9 +25,14 @@ class Actor(Network):
     def __init__(self, name, state_size, action_size, hidden_size):
         super(Actor, self).__init__(name)
         # --- define layers here ---
-        self.fa1 = nn.Linear(state_size * INDICATOR_NUM, hidden_size)
-        self.fa2 = nn.Linear(hidden_size, hidden_size)
-        self.fa3 = nn.Linear(hidden_size, action_size)
+        x_example = torch.zeros(BATCH_SIZE, INDICATOR_NUM, state_size).to(device=get_device())
+        factor = 2
+        depth = 4
+        layers = 'ms'
+        self.xlstm = xLSTM(layers, x_example, factor=factor, depth=depth)
+
+        self.fc1 = nn.Linear(state_size * INDICATOR_NUM, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, action_size)
 
         self.activation = nn.SiLU()
 
@@ -34,29 +40,37 @@ class Actor(Network):
 
     def forward(self, states, visualize=False):
         # --- define forward pass here ---
-        states = torch.flatten(states, start_dim = len(states.size()) - 2)
-        x1 = self.activation(self.fa1(states))
-        x2 = self.activation(self.fa2(x1))
-        action = torch.tanh(self.fa3(x2))
+        is_forward = False
+        if len(states.size()) == 2:
+            states = states.unsqueeze(0)
+            is_forward = True
+            cat_dim = 0
+        else:
+            cat_dim = 1
 
-        # -- define layers to visualize here (optional) ---
-        if visualize and self.visual:
-            self.visual.update_layers(states, action, [x1, x2], [self.fa1.bias, self.fa2.bias])
+        xlstm_output= self.xlstm(states)
+
+        x = torch.flatten(xlstm_output, start_dim = cat_dim)
+        x = self.activation(self.fc1(x))
+        action = torch.tanh(self.fc2(x))
+
+        if is_forward:
+            action = action.squeeze(0)
+
         # -- define layers to visualize until here ---
         return action
 
 class Critic(Network):
     def __init__(self, name, state_size, action_size, hidden_size):
         super(Critic, self).__init__(name)
-        self.state_size = state_size - 6
-        self.l1 = nn.Linear(state_size, int(hidden_size / 2))
+        self.l1 = nn.Linear(state_size * INDICATOR_NUM, int(hidden_size / 2))
         self.l2 = nn.Linear(action_size, int(hidden_size / 2))
         self.l3 = nn.Linear(hidden_size, hidden_size)
         self.l4 = nn.Linear(hidden_size, 1)
 
         # Q2
         # --- define layers here ---
-        self.l5 = nn.Linear(state_size, int(hidden_size / 2))
+        self.l5 = nn.Linear(state_size * INDICATOR_NUM, int(hidden_size / 2))
         self.l6 = nn.Linear(action_size, int(hidden_size / 2))
         self.l7 = nn.Linear(hidden_size, hidden_size)
         self.l8 = nn.Linear(hidden_size, 1)
@@ -89,6 +103,8 @@ class Critic(Network):
         x = self.silu(self.l3(x))
         x1 = self.l4(x)
         return x1
+
+
 
 class TD3(OffPolicyAgent):
     def __init__(self, device):

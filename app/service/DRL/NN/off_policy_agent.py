@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as torchf
 from core_optimizer import CoRe
 
-from ..settings import N_TRAIN
+from ..settings import N_TRAIN, ACTION_SIZE, HIDDEN_SIZE, BATCH_SIZE
 
 class OffPolicyAgent(ABC):
     def __init__(self, device):
@@ -13,12 +13,12 @@ class OffPolicyAgent(ABC):
         self.device = device
 
         # Network structure
-        self.state_size         = N_TRAIN * 5 + 1 # Could add more states on environment.py(also environment_real.py)
-        self.action_size        = 4
-        self.hidden_size        = 512
+        self.state_size         = N_TRAIN # Could add more states on environment.py(also environment_real.py)
+        self.action_size        = ACTION_SIZE
+        self.hidden_size        = HIDDEN_SIZE
         self.input_size         = self.state_size
         # Hyperparameters
-        self.batch_size         = 2 ** 9
+        self.batch_size         = BATCH_SIZE
         self.buffer_size        = 1000000
         self.discount_factor    = 0.99
         self.learning_rate      = 0.001
