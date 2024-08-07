@@ -10,12 +10,11 @@ from .DRL.replaybuffer import ReplayBuffer
 from .DRL.storagemanager import StorageManager
 from .DRL.graph import Graph
 from .DRL.logger import Logger
-from .DRL.settings import MODEL_STORE_INTERVAL, GRAPH_DRAW_INTERVAL, N_TRAIN, LONG, \
-                        SHORT, CLOSE, HOLD, LIQUIFIED, DATA_DONE, DEMOCRATISATION, get_device
+from .DRL.settings import MODEL_STORE_INTERVAL, N_TRAIN, get_device
 
-import torch
-import numpy as np
 import time
+import pandas as pd
+import os
 
 
 class BacktestManager:
@@ -34,14 +33,21 @@ class BacktestManager:
             margin: float,
             **kwargs
     ):
-        data = DataLoader.load_data_from_ccxt(
-            exchange_name=exchange_name,
-            symbol=symbol,
-            timeframe=timeframe,
-            start_time=start_time,
-            end_time=end_time,
-            timezone=timezone
-        )
+        file_name = f"{exchange_name}_{symbol.replace('/', '_')}_{timeframe}_{start_time}_{end_time}.csv"
+        file_path = os.path.join('data', file_name)
+        try:
+            data = pd.read_csv(file_path)
+        except FileNotFoundError:
+            DataLoader.save_data_from_ccxt(
+                exchange_name=exchange_name,
+                symbol=symbol,
+                timeframe=timeframe,
+                start_time=start_time,
+                end_time=end_time,
+                timezone=timezone
+            )
+        finally:
+            data = pd.read_csv(file_path)
 
         # 동적으로 전략 클래스 불러오기
         # strategy_module = importlib.import_module(f"app.service.{strategy_name}")
