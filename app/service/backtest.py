@@ -1,4 +1,4 @@
-from backtesting import Backtest
+from app.model.Backtest import Backtest
 import pprint
 import importlib
 import pandas as pd
