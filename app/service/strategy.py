@@ -12,10 +12,10 @@ class MyStrategy(Strategy):
         self.ma2 = self.I(SMA, price, 20)
 
     def next(self):
-        if crossover(self.ma1, self.ma2):
-            self.buy()
-        elif crossover(self.ma2, self.ma1):
-            self.sell()
+        if len(self.data) % 2 == 0:
+            self.buy(size=2)
+        else:
+            self.sell(size=2)
 
     def update_data(self, new_data: pd.DataFrame):
         super().update_data(new_data)
