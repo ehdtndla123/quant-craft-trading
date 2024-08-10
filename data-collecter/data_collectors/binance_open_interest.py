@@ -41,7 +41,6 @@ class BinanceOpenInterest(BaseCollector):
                             'type': 'open_interest',
                             'data': data
                         })
-                    print(data)
                 except Exception as e:
                     print(f"Error fetching open interest for {self.symbol}: {e}")
                 await asyncio.sleep(60)

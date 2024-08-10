@@ -41,7 +41,6 @@ class BinanceFundingRate(BaseCollector):
                             'type': 'funding_rate',
                             'data': data
                         })
-                    print(data)
                 except Exception as e:
                     print(f"Error fetching funding rate for {self.symbol}: {e}")
                 await asyncio.sleep(300)  # 5 minutes
