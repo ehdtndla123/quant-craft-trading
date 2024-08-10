@@ -1,0 +1,17 @@
+# PyCharm/IntelliJ IDEA
+.idea/
+# Compiled Python files
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# Python package metadata
+*.egg-info/
+
+# Logs
+*.log
+
+# .DS_Store for macOS
+.DS_Store
