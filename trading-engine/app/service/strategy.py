@@ -1,6 +1,5 @@
 # from backtesting import Strategy
 from app.model.Strategy import Strategy
-from backtesting.lib import crossover
 from backtesting.test import SMA
 import pandas as pd
 

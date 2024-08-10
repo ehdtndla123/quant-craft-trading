@@ -5,7 +5,7 @@ from typing import Callable, Tuple
 
 import numpy as np
 import pandas as pd
-from backtesting._util import _Data,_as_str,_Indicator,try_
+from backtesting._util import _as_str,_Indicator,try_
 
 # from .Broker import Broker
 from app.services.broker_service import BrokerService as Broker

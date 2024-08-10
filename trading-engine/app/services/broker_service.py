@@ -3,7 +3,6 @@
 from sqlalchemy.orm import Session
 from app.services import order_service, trade_service
 from app.db.models import Order, Trade
-from app.core.config import settings
 import pandas as pd
 from math import copysign
 from typing import List, Optional
