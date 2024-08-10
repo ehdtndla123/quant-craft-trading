@@ -3,8 +3,8 @@ from .base_collector import BaseCollector
 
 
 class GenericExchangeMarketData(BaseCollector):
-    def __init__(self, exchange, exchange_name, symbol, producer, topics):
-        super().__init__(symbol, producer, topics)
+    def __init__(self, exchange, exchange_name, symbol, producer, topic):
+        super().__init__(symbol, producer, topic)
         self.exchange = exchange
         self.exchange_name = exchange_name
         self.is_running = False
@@ -29,7 +29,7 @@ class GenericExchangeMarketData(BaseCollector):
                         'type': 'trade',
                         'data': trade
                     }
-                    self.producer.send(self.topics['trade'], data)
+                    self.producer.send(self.topic['trade'], data)
             except Exception as e:
                 print(f"Error watching trades for {self.exchange_name} {self.symbol}: {e}")
                 await asyncio.sleep(5)
@@ -44,7 +44,7 @@ class GenericExchangeMarketData(BaseCollector):
                     'type': 'orderbook',
                     'data': orderbook
                 }
-                self.producer.send(self.topics['orderbook'], data)
+                self.producer.send(self.topic['orderbook'], data)
             except Exception as e:
                 print(f"Error watching orderbook for {self.exchange_name} {self.symbol}: {e}")
                 await asyncio.sleep(5)
@@ -59,7 +59,7 @@ class GenericExchangeMarketData(BaseCollector):
                     'type': 'ohlcv',
                     'data': ohlcv
                 }
-                self.producer.send(self.topics['ohlcv'], data)
+                self.producer.send(self.topic['ohlcv'], data)
             except Exception as e:
                 print(f"Error watching OHLCV for {self.exchange_name} {self.symbol}: {e}")
                 await asyncio.sleep(5)
