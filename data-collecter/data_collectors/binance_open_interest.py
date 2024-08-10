@@ -4,6 +4,7 @@ import ssl
 import certifi
 from .base_collector import BaseCollector
 
+
 class BinanceOpenInterest(BaseCollector):
     def __init__(self, symbol, producer, topic):
         super().__init__(symbol, producer, topic)
