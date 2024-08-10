@@ -1,0 +1,30 @@
+kafka:
+  bootstrap_servers:
+    - "localhost:9092"
+  topics:
+    trade: "trades"
+    orderbook: "orderbook"
+    ohlcv: "ohlcv"
+    liquidation: "market.info"
+    open_interest: "market.info"
+    funding_rate: "market.info"
+
+exchanges:
+  - name: "binance"
+    symbols:
+      - "BTC/USDT"
+#      - "ETH/USDT"
+    data_types:
+#      - "trade"
+#      - "orderbook"
+#      - "ohlcv"
+      - "liquidation"
+      - "open_interest"
+      - "funding_rate"
+#  - name: "bitmex"
+#    symbols:
+#      - "BTC/USD"
+#      - "ETH/USD"
+#    data_types:
+#      - "trade"
+#      - "orderbook"
