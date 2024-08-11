@@ -1,56 +1,92 @@
-from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey, Boolean, Table, Enum
 from sqlalchemy.orm import relationship
 from app.db.database import Base
 import datetime
+import enum
 
 
+class OrderStatus(enum.Enum):
+    PENDING = "pending"
+    OPEN = "open"
+    CLOSED = "closed"
+    CANCELED = "canceled"
 
-class Bot(Base):
-    __tablename__ = "bots"
 
+class TradeStatus(enum.Enum):
+    OPEN = "open"
+    CLOSED = "closed"
+
+
+class User(Base):
+    __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    dry_run = Column(Boolean, default=True)
+    username = Column(String, unique=True, index=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    bots = relationship("Bot", back_populates="user")
+
+
+class Strategy(Base):
+    __tablename__ = "strategies"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    description = Column(String)
     leverage = Column(Float)
     trade_on_close = Column(Boolean, default=False)
     hedge_mode = Column(Boolean, default=False)
     exclusive_mode = Column(Boolean, default=False)
-    name = Column(String, index=True)
     timeframe = Column(String)
     symbol = Column(String)
     exchange = Column(String)
-    cash = Column(Float)
     commission = Column(Float)
-    strategy_name = Column(String)
-
-    # data_list = Column(String)
-
-
-    # strategy_id = Column(Integer, ForeignKey('strategies.id'))
-    # user_id = Column(Integer, ForeignKey('users.id'))
-
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    # strategy = relationship("Strategy", back_populates="bots")
-    # user = relationship("User", back_populates="bots")
-    #
-    # orders = relationship("Order", back_populates="bot")
-    # trades = relationship("Trade", back_populates="bot")
+    bot_strategies = relationship("BotStrategy", back_populates="strategy")
+
+
+class Bot(Base):
+    __tablename__ = "bots"
+    id = Column(Integer, primary_key=True, index=True)
+    dry_run = Column(Boolean, default=True)
+    name = Column(String)
+    cash = Column(Float)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship("User", back_populates="bots")
+
+    bot_strategies = relationship("BotStrategy", back_populates="bot")
+
+
+class BotStrategy(Base):
+    __tablename__ = "bot_strategies"
+    id = Column(Integer, primary_key=True, index=True)
+    bot_id = Column(Integer, ForeignKey('bots.id'))
+    strategy_id = Column(Integer, ForeignKey('strategies.id'))
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    bot = relationship("Bot", back_populates="bot_strategies")
+    strategy = relationship("Strategy", back_populates="bot_strategies")
+    orders = relationship("Order", back_populates="bot_strategy")
+    trades = relationship("Trade", back_populates="bot_strategy")
+
 
 class Order(Base):
     __tablename__ = "orders"
-
     id = Column(Integer, primary_key=True, index=True)
     size = Column(Float)
     limit_price = Column(Float, nullable=True)
     stop_price = Column(Float, nullable=True)
     sl_price = Column(Float, nullable=True)
     tp_price = Column(Float, nullable=True)
-    status = Column(String)
+    status = Column(Enum(OrderStatus))
     is_contingent = Column(Boolean, default=False)
-
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+    bot_strategy_id = Column(Integer, ForeignKey('bot_strategies.id'))
+    bot_strategy = relationship("BotStrategy", back_populates="orders")
 
     trade_id = Column(Integer, ForeignKey('trades.id'), nullable=True)
     parent_trade_id = Column(Integer, ForeignKey('trades.id'), nullable=True)
@@ -69,22 +105,23 @@ class Order(Base):
 
 class Trade(Base):
     __tablename__ = "trades"
-
     id = Column(Integer, primary_key=True, index=True)
     size = Column(Float)
     entry_price = Column(Float)
     exit_price = Column(Float, nullable=True)
     entry_time = Column(DateTime)
     exit_time = Column(DateTime, nullable=True)
-    status = Column(String)
-
+    status = Column(Enum(TradeStatus))
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+    bot_strategy_id = Column(Integer, ForeignKey('bot_strategies.id'))
+    bot_strategy = relationship("BotStrategy", back_populates="trades")
 
     sl_order_id = Column(Integer, ForeignKey('orders.id'), nullable=True)
-    tp_order_id = Column(Integer, ForeignKey('orders.id'), nullable=True)
-
     sl_order = relationship("Order", foreign_keys=[sl_order_id], overlaps="trade")
+
+    tp_order_id = Column(Integer, ForeignKey('orders.id'), nullable=True)
     tp_order = relationship("Order", foreign_keys=[tp_order_id], overlaps="trade")
 
     orders = relationship("Order", foreign_keys=[Order.trade_id], back_populates="trade")
