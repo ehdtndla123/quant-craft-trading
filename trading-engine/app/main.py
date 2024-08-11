@@ -9,6 +9,8 @@ from app.db.database import initialize_database, SessionLocal
 import app.services.trade_service as trade_service
 import app.services.order_service as order_service
 import app.services.bot_service as bot_service
+import app.services.strategy_service as strategy_service
+import app.services.bot_strategy_service as bot_strategy_service
 import numpy as np
 import os
 
@@ -24,12 +26,13 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 # templates 설정
 templates = Jinja2Templates(directory=os.path.join(project_root, "templates"))
 
+
 class TradingEngineManager:
     def __init__(self):
         self.engine = None
 
     async def initialize(self):
-        example_bot = create_example_bot()
+        example_bot = create_example_bot_strategy()
         self.engine = TradingEngine(example_bot)
         asyncio.create_task(self.engine.run())
 
@@ -37,34 +40,49 @@ class TradingEngineManager:
         if self.engine:
             await self.engine.stop()
 
+
 trading_engine_manager = TradingEngineManager()
 
-def create_example_bot():
+
+def create_example_bot_strategy():
     db = SessionLocal()
     try:
+        # 봇 생성
         bot_data = {
             "dry_run": True,
-            "leverage": 1.0,
-            "trade_on_close": False,
-            "hedge_mode": True,
-            "exclusive_mode": True,
             "name": "Dongsoo",
-            "timeframe": "1m",
-            "symbol": "BTC/USDT",
-            "exchange": "binance",
             "cash": 1000000.0,
-            "commission": 0.001,
-            "strategy_name": "MyStrategy"
         }
         new_bot = bot_service.create_bot(db, bot_data)
         print(f"새로운 봇이 생성되었습니다. ID: {new_bot.id}")
         print(f"봇 이름: {new_bot.name}")
-        print(f"거래소: {new_bot.exchange}")
-        print(f"심볼: {new_bot.symbol}")
-        print(f"전략: {new_bot.strategy_name}")
-        return new_bot
+        print(f"초기 자금: {new_bot.cash}")
+
+        # 전략 생성
+        strategy_data = {
+            "name": "MyStrategy",
+            "description": "A simple trading strategy",
+            "leverage": 1.0,
+            "trade_on_close": False,
+            "hedge_mode": True,
+            "exclusive_mode": True,
+            "timeframe": "1m",
+            "symbol": "BTC/USDT",
+            "exchange": "binance",
+            "commission": 0.001
+        }
+        new_strategy = strategy_service.create_strategy(db, strategy_data)
+        print(f"새로운 전략이 생성되었습니다. ID: {new_strategy.id}")
+        print(f"전략 이름: {new_strategy.name}")
+        print(f"거래소: {new_strategy.exchange}")
+        print(f"심볼: {new_strategy.symbol}")
+
+        new_bot_strategy = bot_strategy_service.create_bot_strategy(db, new_bot.id, new_strategy.id)
+
+        return bot_strategy_service.get_bot_strategy_with_relations(db, new_bot_strategy.id)
     finally:
         db.close()
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -73,10 +91,12 @@ async def startup_event():
     print("Database initialization completed")
     await trading_engine_manager.initialize()
 
+
 @app.on_event("shutdown")
 async def shutdown_event():
     print("Stopping the bot...")
     await trading_engine_manager.shutdown()
+
 
 def get_db():
     db = SessionLocal()
@@ -85,10 +105,12 @@ def get_db():
     finally:
         db.close()
 
+
 async def get_trading_engine():
     if trading_engine_manager.engine is None:
         raise RuntimeError("TradingEngine is not initialized")
     return trading_engine_manager.engine
+
 
 async def get_real_data(engine: TradingEngine):
     db = next(get_db())
@@ -105,7 +127,8 @@ async def get_real_data(engine: TradingEngine):
     trades_df = pd.DataFrame({
         'Size': [t.size for t in all_trades],
         'EntryPrice': [t.entry_price for t in all_trades],
-        'ExitPrice': [t.exit_price if t.exit_price is not None else engine.broker_service.last_price for t in all_trades],
+        'ExitPrice': [t.exit_price if t.exit_price is not None else engine.broker_service.last_price for t in
+                      all_trades],
         'PnL': [trade_service.calculate_pl(t, engine.broker_service.last_price) for t in all_trades],
         'ReturnPct': [trade_service.calculate_pl_pct(t, engine.broker_service.last_price) for t in all_trades],
         'EntryTime': [pd.to_datetime(t.entry_time) for t in all_trades],
@@ -114,9 +137,11 @@ async def get_real_data(engine: TradingEngine):
 
     return cash, position, equity, orders, trades_df
 
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
 
 @app.get("/api/data")
 async def get_data(engine: TradingEngine = Depends(get_trading_engine)):
@@ -166,6 +191,8 @@ async def get_data(engine: TradingEngine = Depends(get_trading_engine)):
         }
     }
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

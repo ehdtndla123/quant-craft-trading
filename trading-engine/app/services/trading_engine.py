@@ -10,21 +10,36 @@ from app.services.broker_service import BrokerService
 from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
 from app.core.config import settings
-from app.db.models import Bot
+from app.db.models import BotStrategy
 
 
 class TradingEngine:
-    def __init__(self, bot: Bot):
-        self.symbol = bot.symbol
-        self.timeframe = bot.timeframe
+    def __init__(self, bot_strategy: BotStrategy):
+        self.bot_strategy = bot_strategy
+        self.bot = bot_strategy.bot
+        self.db_strategy = bot_strategy.strategy
+
+        self.symbol = self.db_strategy.symbol
+        self.timeframe = self.db_strategy.timeframe
         self.data = pd.DataFrame(columns=['Open', 'High', 'Low', 'Close', 'Volume'])
         self.is_running = False
         self.db: Session = SessionLocal()
-        self.broker_service = BrokerService(self.db, bot.cash, bot.commission, bot.dry_run, bot.leverage, bot.trade_on_close, bot.hedge_mode, bot.exclusive_mode)
+
+        self.broker_service = BrokerService(
+            self.db,
+            cash=self.bot.cash,
+            commission=self.db_strategy.commission,
+            dry_run=self.bot.dry_run,
+            leverage=self.db_strategy.leverage,
+            trade_on_close=self.db_strategy.trade_on_close,
+            hedging=self.db_strategy.hedge_mode,
+            exclusive_orders=self.db_strategy.exclusive_mode
+        )
+
         strategy_module = importlib.import_module("app.strategy.strategy")
-        self.strategy = getattr(strategy_module, bot.strategy_name)
+        self.strategy = getattr(strategy_module, self.db_strategy.name)
         self._strategy = None
-        self.exchange = getattr(ccxt, bot.exchange)()
+        self.exchange = getattr(ccxt, self.db_strategy.exchange)()
 
     async def simulate_ohlcv(self):
         print(f"Starting to simulate OHLCV data for {self.symbol} on {self.exchange.name}")
