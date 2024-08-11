@@ -184,7 +184,7 @@ class BrokerService(IBroker):
             if order.sl_price or order.tp_price:
                 reprocess = True
 
-        order_service.update_order(self.db, order.id, {"status": "FILLED"})
+        order_service.update_order(self.db, order.id, {"status": "CLOSED"})
         return reprocess
 
     def _reduce_trade(self, trade: Trade, price: float, size: float):
