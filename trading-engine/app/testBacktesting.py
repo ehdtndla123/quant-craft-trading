@@ -1,5 +1,5 @@
-from app.service.backtest import BacktestManager
-from app.service.data_loader import DataLoader
+from app.services.backtesting_service import BacktestManager
+from app.services.data_loader_service import DataLoaderService as DataLoader
 
 data = DataLoader.load_data_from_ccxt("binance", "BTC/USDT", "1h", "2024-08-01", "2024-08-10", "UTC")
 print(data)
