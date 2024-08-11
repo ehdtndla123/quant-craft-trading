@@ -1,4 +1,4 @@
-from app.model.Backtest import Backtest
+from app.model.backtest.Backtest import Backtest
 import pprint
 import importlib
 import pandas as pd
@@ -22,7 +22,7 @@ class BacktestManager:
             raise ValueError("Data must be either a DataFrame or a path to a CSV file.")
 
         # 동적으로 전략 클래스 불러오기
-        strategy_module = importlib.import_module(f"app.service.strategy")
+        strategy_module = importlib.import_module(f"app.strategy.strategy")
         StrategyClass = getattr(strategy_module, strategy_name)
 
         bt = Backtest(data, StrategyClass, commission=commission, cash=cash,

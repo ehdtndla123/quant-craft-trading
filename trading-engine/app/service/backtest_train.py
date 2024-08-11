@@ -2,7 +2,7 @@ from app.service.DRL.env.drl_backtesting import Backtest
 # from backtesting import Backtest
 import pprint
 import importlib
-from app.service.data_loader import DataLoader
+from app.services.data_loader_service import DataLoaderService as DataLoader
 
 
 from .DRL.NN.td3_xLSTM import TD3

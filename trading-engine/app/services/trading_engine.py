@@ -21,7 +21,7 @@ class TradingEngine:
         self.is_running = False
         self.db: Session = SessionLocal()
         self.broker_service = BrokerService(self.db, bot.cash, bot.commission, bot.dry_run, bot.leverage, bot.trade_on_close, bot.hedge_mode, bot.exclusive_mode)
-        strategy_module = importlib.import_module("app.service.strategy")
+        strategy_module = importlib.import_module("app.strategy.strategy")
         self.strategy = getattr(strategy_module, bot.strategy_name)
         self._strategy = None
         self.exchange = getattr(ccxt, bot.exchange)()

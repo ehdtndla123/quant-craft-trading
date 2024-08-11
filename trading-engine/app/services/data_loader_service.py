@@ -2,7 +2,8 @@ import pandas as pd
 import ccxt
 import os
 
-class DataLoader:
+
+class DataLoaderService:
     @staticmethod
     def load_data_from_ccxt(exchange_name: str, symbol: str, timeframe: str, start_time: str, end_time: str,
                             timezone: str = "UTC") -> pd.DataFrame:
@@ -47,8 +48,8 @@ class DataLoader:
 
     @staticmethod
     def save_data_from_ccxt(exchange_name: str, symbol: str, timeframe: str, start_time: str, end_time: str,
-                                  timezone: str = "UTC", filename: str = None, directory: str = "data"):
-        df = DataLoader.load_data_from_ccxt(exchange_name, symbol, timeframe, start_time, end_time, timezone)
+                            timezone: str = "UTC", filename: str = None, directory: str = "data"):
+        df = DataLoaderService.load_data_from_ccxt(exchange_name, symbol, timeframe, start_time, end_time, timezone)
 
         if filename is None:
             filename = f"{exchange_name}_{symbol.replace('/', '_')}_{timeframe}_{start_time}_{end_time}.csv"

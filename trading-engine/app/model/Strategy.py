@@ -7,8 +7,7 @@ import numpy as np
 import pandas as pd
 from backtesting._util import _as_str,_Indicator,try_
 
-# from .Broker import Broker
-from app.services.broker_service import BrokerService as Broker
+from .broker_interface import IBroker
 from .Order import Order
 
 
@@ -22,7 +21,7 @@ class Strategy(metaclass=ABCMeta):
     """
     def __init__(self, broker, data, params):
         self._indicators = []
-        self._broker: Broker = broker
+        self._broker: IBroker = broker
         self._data = data
         self._params = self._check_params(params)
 

@@ -8,9 +8,9 @@ from math import copysign
 from typing import List, Optional
 import numpy as np
 import warnings
+from app.model.broker_interface import IBroker
 
-
-class BrokerService:
+class BrokerService(IBroker):
     def __init__(self, db: Session, cash: float, commission: float, dry_run: bool, leverage: float, trade_on_close: bool, hedging: bool, exclusive_orders: bool):
         self.db = db
         self.cash = cash
@@ -100,34 +100,6 @@ class BrokerService:
         new_order = order_service.create_order(self.db, order_data)
 
         return new_order
-
-    # def new_order(self, order_data: dict) -> Order:
-    #     size = order_data['size']
-    #     is_long = size > 0
-    #     adjusted_price = self.adjusted_price(size)
-    #
-    #     if is_long:
-    #         if not (order_data.get('sl_price') or -float('inf')) < (
-    #                 order_data.get('limit_price') or order_data.get('stop_price') or adjusted_price) < (
-    #                        order_data.get('tp_price') or float('inf')):
-    #             raise ValueError("Long orders require: SL < LIMIT < TP")
-    #     else:
-    #         if not (order_data.get('tp_price') or -float('inf')) < (
-    #                 order_data.get('limit_price') or order_data.get('stop_price') or adjusted_price) < (
-    #                        order_data.get('sl_price') or float('inf')):
-    #             raise ValueError("Short orders require: TP < LIMIT < SL")
-    #
-    #     if self._exclusive_orders:
-    #         open_orders = order_service.get_open_orders(self.db)
-    #         for order in open_orders:
-    #             if not order.is_contingent:
-    #                 order_service.cancel_order(self.db, order.id)
-    #
-    #         open_trades = trade_service.get_open_trades(self.db)
-    #         for trade in open_trades:
-    #             trade_service.close_trade(self.db, trade.id, self.last_price, pd.Timestamp.now())
-    #
-    #     return order_service.create_order(self.db, order_data)
 
     def process_orders(self):
         if self._data is None or len(self._data) < 2:
@@ -354,10 +326,10 @@ class BrokerService:
             "is_short": size < 0
         }
 
-    def close_position(self, portion: float = 1.0):
-        open_trades = trade_service.get_open_trades(self.db)
-        for trade in open_trades:
-            trade_service.close_trade(self.db, trade.id, self.last_price, pd.Timestamp.now())
+    # def close_position(self, portion: float = 1.0):
+    #     open_trades = trade_service.get_open_trades(self.db)
+    #     for trade in open_trades:
+    #         trade_service.close_trade(self.db, trade.id, self.last_price, pd.Timestamp.now())
 
     def next(self):
         """시뮬레이션의 다음 단계로 진행"""
