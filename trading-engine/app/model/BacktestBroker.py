@@ -8,9 +8,10 @@ from backtesting._util import _Data
 from .Exception import _OutOfMoneyError
 from .Trade import Trade
 from .Order import Order
+from .broker_interface import IBroker
 
 
-class Broker:
+class Broker(IBroker):
     def __init__(self, *, data, cash, commission, margin,
                  trade_on_close, hedging, exclusive_orders, index):
         assert 0 < cash, f"cash should be >0, is {cash}"
@@ -109,7 +110,7 @@ class Broker:
 
     def next(self):
         i = self._i = len(self._data) - 1
-        self._process_orders()
+        self.process_orders()
 
         # Log account equity for the equity curve
         equity = self.equity
@@ -124,7 +125,7 @@ class Broker:
             self._equity[i:] = 0
             raise _OutOfMoneyError
 
-    def _process_orders(self):
+    def process_orders(self):
         data = self._data
         open, high, low = data.Open[-1], data.High[-1], data.Low[-1]
         prev_close = data.Close[-2]
@@ -270,7 +271,7 @@ class Broker:
             self.orders.remove(order)
 
         if reprocess_orders:
-            self._process_orders()
+            self.process_orders()
 
     def _reduce_trade(self, trade: Trade, price: float, size: float, time_index: int):
         assert trade.size * size < 0
