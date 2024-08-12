@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey, Boolean, Table, Enum
+from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey, Boolean, Text, Table, Enum
 from sqlalchemy.orm import relationship
 from app.db.database import Base
 import datetime
@@ -15,6 +15,19 @@ class OrderStatus(enum.Enum):
 class TradeStatus(enum.Enum):
     OPEN = "open"
     CLOSED = "closed"
+
+
+class BacktestResult(Base):
+    __tablename__ = "backtest_results"
+
+    id = Column(Integer, primary_key=True, index=True)
+    strategy_name = Column(String, index=True)
+    run_date = Column(DateTime, default=datetime.datetime.utcnow)
+    parameters = Column(Text)
+    results = Column(Text)
+    trades = Column(Text)
+    equity_curve = Column(Text)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 
 class User(Base):
