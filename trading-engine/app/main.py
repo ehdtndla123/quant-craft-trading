@@ -1,9 +1,12 @@
 import asyncio
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import pandas as pd
+from starlette.responses import JSONResponse
+from typing import Dict, Any
+from app.services import backtesting_service
 from app.services.trading_engine import TradingEngine
 from app.db.database import initialize_database, SessionLocal
 import app.services.trade_service as trade_service
@@ -190,6 +193,14 @@ async def get_data(engine: TradingEngine = Depends(get_trading_engine)):
             'worst_trade': clean_float(trades_df['PnL'].min()),
         }
     }
+
+
+@app.get("/backtest/{result_id}", response_model=Dict[str, Any])
+async def get_backtest_data(result_id: int):
+    result_data = backtesting_service.get_backtest_result_data(next(get_db()),result_id)
+    if result_data is None:
+        raise HTTPException(status_code=404, detail="Backtest result not found")
+    return JSONResponse(content=result_data)
 
 
 if __name__ == "__main__":
