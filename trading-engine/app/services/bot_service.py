@@ -1,34 +1,23 @@
-# app/services/bot_service.py
-
+from app.repositories import bot_repository
+from app.schemas.bot import BotCreate, BotUpdate
 from sqlalchemy.orm import Session
-from app.db.models import Bot
 
-def create_bot(db: Session, bot_data: dict) -> Bot:
-    new_bot = Bot(**bot_data)
-    db.add(new_bot)
-    db.commit()
-    db.refresh(new_bot)
-    return new_bot
 
-def get_bot(db: Session, bot_id: int) -> Bot:
-    return db.query(Bot).filter(Bot.id == bot_id).first()
+def create_bot(db: Session, bot_data: BotCreate):
+    return bot_repository.create_bot(db, bot_data.dict())
+
+
+def get_bot(db: Session, bot_id: int):
+    return bot_repository.get_bot(db, bot_id)
+
 
 def get_bots(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Bot).offset(skip).limit(limit).all()
+    return bot_repository.get_bots(db, skip, limit)
 
-def update_bot(db: Session, bot_id: int, bot_data: dict) -> Bot:
-    db_bot = get_bot(db, bot_id)
-    if db_bot:
-        for key, value in bot_data.items():
-            setattr(db_bot, key, value)
-        db.commit()
-        db.refresh(db_bot)
-    return db_bot
 
-def delete_bot(db: Session, bot_id: int) -> bool:
-    db_bot = get_bot(db, bot_id)
-    if db_bot:
-        db.delete(db_bot)
-        db.commit()
-        return True
-    return False
+def update_bot(db: Session, bot_id: int, bot_data: BotUpdate):
+    return bot_repository.update_bot(db, bot_id, bot_data.dict())
+
+
+def delete_bot(db: Session, bot_id: int):
+    return bot_repository.delete_bot(db, bot_id)
