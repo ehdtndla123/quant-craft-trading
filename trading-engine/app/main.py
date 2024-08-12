@@ -6,6 +6,11 @@ from fastapi.templating import Jinja2Templates
 import pandas as pd
 from starlette.responses import JSONResponse
 from typing import Dict, Any
+
+from app.schemas.bot import BotCreate
+from app.schemas.bot_strategy import BotStrategyCreate
+from app.schemas.strategy import StrategyCreate
+
 from app.services import backtesting_service
 from app.services.trading_engine import TradingEngine
 from app.db.database import initialize_database, SessionLocal
@@ -16,6 +21,7 @@ import app.services.strategy_service as strategy_service
 import app.services.bot_strategy_service as bot_strategy_service
 import numpy as np
 import os
+from app.routes import bot, bot_strategy, strategy
 
 app = FastAPI()
 
@@ -25,6 +31,10 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # static 파일 설정
 static_dir = os.path.join(project_root, "static")
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+app.include_router(bot.router)
+app.include_router(bot_strategy.router)
+app.include_router(strategy.router)
+
 
 # templates 설정
 templates = Jinja2Templates(directory=os.path.join(project_root, "templates"))
@@ -51,36 +61,40 @@ def create_example_bot_strategy():
     db = SessionLocal()
     try:
         # 봇 생성
-        bot_data = {
-            "dry_run": True,
-            "name": "Dongsoo",
-            "cash": 1000000.0,
-        }
-        new_bot = bot_service.create_bot(db, bot_data)
+        bot_create = BotCreate(
+            dry_run=True,
+            name="Dongsoo",
+            cash=1000000.0,
+        )
+        new_bot = bot_service.create_bot(db, bot_create)
         print(f"새로운 봇이 생성되었습니다. ID: {new_bot.id}")
         print(f"봇 이름: {new_bot.name}")
         print(f"초기 자금: {new_bot.cash}")
 
         # 전략 생성
-        strategy_data = {
-            "name": "MyStrategy",
-            "description": "A simple trading strategy",
-            "leverage": 1.0,
-            "trade_on_close": False,
-            "hedge_mode": True,
-            "exclusive_mode": True,
-            "timeframe": "1m",
-            "symbol": "BTC/USDT",
-            "exchange": "binance",
-            "commission": 0.001
-        }
-        new_strategy = strategy_service.create_strategy(db, strategy_data)
+        strategy_create = StrategyCreate(
+            name="MyStrategy",
+            description="A simple trading strategy",
+            leverage=1.0,
+            trade_on_close=False,
+            hedge_mode=True,
+            exclusive_mode=True,
+            timeframe="1m",
+            symbol="BTC/USDT",
+            exchange="binance",
+            commission=0.001
+        )
+        new_strategy = strategy_service.create_strategy(db, strategy_create)
         print(f"새로운 전략이 생성되었습니다. ID: {new_strategy.id}")
         print(f"전략 이름: {new_strategy.name}")
         print(f"거래소: {new_strategy.exchange}")
         print(f"심볼: {new_strategy.symbol}")
 
-        new_bot_strategy = bot_strategy_service.create_bot_strategy(db, new_bot.id, new_strategy.id)
+        bot_strategy_create = BotStrategyCreate(
+            bot_id=new_bot.id,
+            strategy_id=new_strategy.id
+        )
+        new_bot_strategy = bot_strategy_service.create_bot_strategy(db, bot_strategy_create)
 
         return bot_strategy_service.get_bot_strategy_with_relations(db, new_bot_strategy.id)
     finally:
