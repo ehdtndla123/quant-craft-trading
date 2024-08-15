@@ -1,10 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import trading_bot, strategy, bot, backtesting
+from app.routes import trading_bot, strategy, bot, backtesting, example_generator
 from app.db.database import initialize_database
 from app.services.trading_engine_manager import trading_engine_manager
 from admin import setup_admin
-from example_generator import create_example_trading_bot
 
 app = FastAPI()
 
@@ -20,7 +19,7 @@ app.include_router(trading_bot.router)
 app.include_router(strategy.router)
 app.include_router(bot.router)
 app.include_router(backtesting.router)
-app.include_router(create_example_trading_bot.router)
+app.include_router(example_generator.router)
 setup_admin(app)
 
 
