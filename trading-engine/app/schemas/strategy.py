@@ -23,7 +23,7 @@ class StrategyUpdate(StrategyBase):
     pass
 
 
-class StrategyInDB(StrategyBase):
+class StrategyResponse(StrategyBase):
     id: int
     created_at: datetime
     updated_at: datetime
