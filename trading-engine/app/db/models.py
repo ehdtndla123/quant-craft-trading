@@ -58,7 +58,7 @@ class Strategy(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    bot_strategies = relationship("BotStrategy", back_populates="strategy")
+    trading_bots = relationship("TradingBot", back_populates="strategy")
 
 
 class Bot(Base):
@@ -73,7 +73,7 @@ class Bot(Base):
     user_id = Column(Integer, ForeignKey('users.id'))
     user = relationship("User", back_populates="bots")
 
-    bot_strategies = relationship("BotStrategy", back_populates="bot")
+    trading_bots = relationship("TradingBot", back_populates="bot")
 
 
 class TradingBot(Base):
@@ -83,10 +83,10 @@ class TradingBot(Base):
     strategy_id = Column(Integer, ForeignKey('strategies.id'))
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    bot = relationship("Bot", back_populates="bot_strategies")
-    strategy = relationship("Strategy", back_populates="bot_strategies")
-    orders = relationship("Order", back_populates="bot_strategy")
-    trades = relationship("Trade", back_populates="bot_strategy")
+    bot = relationship("Bot", back_populates="trading_bots")
+    strategy = relationship("Strategy", back_populates="trading_bots")
+    orders = relationship("Order", back_populates="trading_bot")
+    trades = relationship("Trade", back_populates="trading_bot")
 
 
 class Order(Base):
@@ -102,8 +102,8 @@ class Order(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    bot_strategy_id = Column(Integer, ForeignKey('bot_strategies.id'))
-    bot_strategy = relationship("BotStrategy", back_populates="orders")
+    trading_bot_id = Column(Integer, ForeignKey('trading_bots.id'))
+    trading_bot = relationship("TradingBot", back_populates="orders")
 
     trade_id = Column(Integer, ForeignKey('trades.id'), nullable=True)
     parent_trade_id = Column(Integer, ForeignKey('trades.id'), nullable=True)
@@ -132,8 +132,8 @@ class Trade(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    bot_strategy_id = Column(Integer, ForeignKey('bot_strategies.id'))
-    bot_strategy = relationship("BotStrategy", back_populates="trades")
+    trading_bot_id = Column(Integer, ForeignKey('trading_bots.id'))
+    trading_bot = relationship("TradingBot", back_populates="trades")
 
     sl_order_id = Column(Integer, ForeignKey('orders.id'), nullable=True)
     sl_order = relationship("Order", foreign_keys=[sl_order_id], overlaps="trade")
