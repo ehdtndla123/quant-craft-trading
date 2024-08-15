@@ -61,7 +61,7 @@ class TradingEngine:
                             }, index=[pd.to_datetime(timestamp, unit='ms')], dtype=float)
 
                             if not new_row.empty:
-                                self.data = pd.concat([self.data, new_row],axis=0)
+                                self.data = pd.concat([self.data, new_row], axis=0)
                                 self.data = self.data.sort_index()
                                 self.data = self.data.tail(100)
 
@@ -98,9 +98,6 @@ class TradingEngine:
 
         self.broker_service.process_orders()
         self._strategy.next()
-
-        # 현재 상태 출력
-        self.broker_service.print_status()
 
     async def run(self):
         self.is_running = True
