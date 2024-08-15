@@ -17,8 +17,8 @@ class TradeStatus(enum.Enum):
     CLOSED = "closed"
 
 
-class BacktestResult(Base):
-    __tablename__ = "backtest_results"
+class Backtesting(Base):
+    __tablename__ = "backtesting"
 
     id = Column(Integer, primary_key=True, index=True)
     strategy_name = Column(String, index=True)
@@ -28,6 +28,9 @@ class BacktestResult(Base):
     trades = Column(Text)
     equity_curve = Column(Text)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    strategy_id = Column(Integer, ForeignKey("strategies.id"), index=True)
+    strategy = relationship("Strategy")
 
 
 class User(Base):
@@ -72,8 +75,8 @@ class Bot(Base):
     bot_strategies = relationship("BotStrategy", back_populates="bot")
 
 
-class BotStrategy(Base):
-    __tablename__ = "bot_strategies"
+class TradingBot(Base):
+    __tablename__ = "trading_bots"
     id = Column(Integer, primary_key=True, index=True)
     bot_id = Column(Integer, ForeignKey('bots.id'))
     strategy_id = Column(Integer, ForeignKey('strategies.id'))

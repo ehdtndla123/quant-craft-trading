@@ -2,16 +2,16 @@ from pydantic import BaseModel
 from datetime import datetime
 
 
-class BotStrategyBase(BaseModel):
+class TradingBotBase(BaseModel):
     bot_id: int
     strategy_id: int
 
 
-class BotStrategyCreate(BotStrategyBase):
+class TradingBotCreate(TradingBotBase):
     pass
 
 
-class BotStrategyInDB(BotStrategyBase):
+class TradingBotResponse(TradingBotBase):
     id: int
     created_at: datetime
 
