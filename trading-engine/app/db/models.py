@@ -22,7 +22,8 @@ class Backtesting(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     strategy_name = Column(String, index=True)
-    run_date = Column(DateTime, default=datetime.datetime.utcnow)
+    start_date = Column(String)
+    end_date = Column(String)
     parameters = Column(Text)
     results = Column(Text)
     trades = Column(Text)

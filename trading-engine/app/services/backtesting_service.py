@@ -1,146 +1,76 @@
-from app.model.backtest.Backtest import Backtest
-import importlib
+from sqlalchemy.orm import Session
 import pandas as pd
 import json
-from app.db.models import BacktestResult
-from sqlalchemy.orm import Session
-from datetime import datetime, date
+from datetime import datetime
+from typing import List, Dict, Union
+from app.db.models import Backtesting, Strategy
+from app.model.backtest.Backtest import Backtest
+from app.schemas.backtesting import BacktestingCreate
+from app.repositories import backtesting_repository
+import importlib
 
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, (datetime, date, pd.Timestamp)):
+        if isinstance(obj, (datetime, pd.Timestamp)):
             return obj.isoformat()
         elif isinstance(obj, pd.Timedelta):
             return str(obj)
         return super().default(obj)
 
 
-def run_backtest(
-        data: str or pd.DataFrame,
-        strategy_name: str,
-        commission: float,
-        cash: float,
-        exclusive_orders: bool,
-        **kwargs
-):
+def run(db: Session, data: str or pd.DataFrame, strategy: Strategy, cash: float, start_date: str, end_date: str) -> Backtesting:
+
     # 데이터가 문자열이면 CSV 파일 경로로, DataFrame으로 로드
     if isinstance(data, str):
         data = pd.read_csv(data, index_col=0, parse_dates=True)
     elif not isinstance(data, pd.DataFrame):
         raise ValueError("Data must be either a DataFrame or a path to a CSV file.")
 
-    # 동적으로 전략 클래스 불러오기
+    # 전략 클래스 동적 로드
     strategy_module = importlib.import_module(f"app.strategy.strategy")
-    StrategyClass = getattr(strategy_module, strategy_name)
+    StrategyClass = getattr(strategy_module, strategy.name)
 
-    bt = Backtest(data, StrategyClass, commission=commission, cash=cash,
-                  exclusive_orders=exclusive_orders)
+    # Backtest 실행
+    bt = Backtest(data, StrategyClass, cash=cash, commission=strategy.commission)
     stats = bt.run()
-    bt.plot()
 
-    return stats
-
-
-def save_backtest_result(db: Session, stats, strategy_name: str, parameters: dict):
-    # _Stats 객체에서 필요한 정보 추출
-    results = {k: v for k, v in stats.items() if not k.startswith('_') and not callable(v)}
-
-    # DataFrame을 리스트로 변환
-    trades = stats._trades.to_dict('records')
-    equity_curve = stats._equity_curve.to_dict('records')
-
-    # BacktestResult 객체 생성 및 저장
-    backtest_result = BacktestResult(
-        strategy_name=strategy_name,
-        parameters=json.dumps(parameters, cls=CustomJSONEncoder),
-        results=json.dumps(results, cls=CustomJSONEncoder),
-        trades=json.dumps(trades, cls=CustomJSONEncoder),
-        equity_curve=json.dumps(equity_curve, cls=CustomJSONEncoder)
+    backtesting_data = BacktestingCreate(
+        strategy_id=strategy.id,
+        parameters={"cash": cash, "start_date": start_date, "end_date": end_date},
+        results={k: v for k, v in stats.items() if not k.startswith('_') and not callable(v)},
+        trades=stats._trades.to_dict('records'),
+        equity_curve=stats._equity_curve.to_dict('records')
     )
 
-    db.add(backtest_result)
-    db.commit()
-    db.refresh(backtest_result)
-
-    return backtest_result
+    return backtesting_repository.create_backtesting(db, backtesting_data.dict())
 
 
-def run_and_save_backtest(
-        db: Session,
-        data: str or pd.DataFrame,
-        strategy_name: str,
-        commission: float,
-        cash: float,
-        exclusive_orders: bool,
-        **kwargs
-):
-    stats = run_backtest(data, strategy_name, commission, cash, exclusive_orders, **kwargs)
-
-    parameters = {
-        "commission": commission,
-        "cash": cash,
-        "exclusive_orders": exclusive_orders,
-        **kwargs
-    }
-
-    saved_result = save_backtest_result(db, stats, strategy_name, parameters)
-
-    return saved_result
+def get_backtesting(db: Session, backtesting_id: int) -> Backtesting:
+    return db.query(Backtesting).filter(Backtesting.id == backtesting_id).first()
 
 
-def create_backtest_result(db: Session, backtest_data: dict) -> BacktestResult:
-    new_backtest = BacktestResult(
-        strategy_name=backtest_data['strategy_name'],
-        parameters=json.dumps(backtest_data['parameters']),
-        results=json.dumps(backtest_data['results']),
-        trades=json.dumps(backtest_data['trades'].to_dict('records')),
-        equity_curve=json.dumps(backtest_data['equity_curve'].to_dict('records'))
-    )
-    db.add(new_backtest)
-    db.commit()
-    db.refresh(new_backtest)
-    return new_backtest
+def get_backtestings(db: Session, skip: int = 0, limit: int = 100) -> List[Backtesting]:
+    return db.query(Backtesting).offset(skip).limit(limit).all()
 
 
-def get_backtest_result(db: Session, result_id: int) -> BacktestResult:
-    return db.query(BacktestResult).filter(BacktestResult.id == result_id).first()
-
-
-def get_backtest_results(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(BacktestResult).offset(skip).limit(limit).all()
-
-
-def get_backtest_result_data(db: Session, result_id: int) -> dict:
-    result = get_backtest_result(db, result_id)
-    if result:
-        return json.loads(json.dumps({
-            'results': json.loads(result.results),
-            'trades': pd.DataFrame(json.loads(result.trades)).to_dict(orient='records'),
-            'equity_curve': pd.DataFrame(json.loads(result.equity_curve)).to_dict(orient='records')
-        }, cls=CustomJSONEncoder))
-    return None
-
-
-def update_backtest_result(db: Session, result_id: int, backtest_data: dict) -> BacktestResult:
-    db_result = get_backtest_result(db, result_id)
-    if db_result:
-        db_result.strategy_name = backtest_data.get('strategy_name', db_result.strategy_name)
-        db_result.parameters = json.dumps(backtest_data.get('parameters', json.loads(db_result.parameters)))
-        db_result.results = json.dumps(backtest_data.get('results', json.loads(db_result.results)))
-        db_result.trades = json.dumps(
-            backtest_data.get('trades', pd.DataFrame(json.loads(db_result.trades))).to_dict('records'))
-        db_result.equity_curve = json.dumps(
-            backtest_data.get('equity_curve', pd.DataFrame(json.loads(db_result.equity_curve))).to_dict('records'))
+def update(db: Session, backtesting_id: int, backtesting_data: Dict) -> Backtesting:
+    db_backtesting = get_backtesting(db, backtesting_id)
+    if db_backtesting:
+        for key, value in backtesting_data.items():
+            if key in ['parameters', 'results', 'trades', 'equity_curve']:
+                setattr(db_backtesting, key, json.dumps(value, cls=CustomJSONEncoder))
+            else:
+                setattr(db_backtesting, key, value)
         db.commit()
-        db.refresh(db_result)
-    return db_result
+        db.refresh(db_backtesting)
+    return db_backtesting
 
 
-def delete_backtest_result(db: Session, result_id: int) -> bool:
-    db_result = get_backtest_result(db, result_id)
-    if db_result:
-        db.delete(db_result)
+def delete(db: Session, backtesting_id: int) -> bool:
+    db_backtesting = get_backtesting(db, backtesting_id)
+    if db_backtesting:
+        db.delete(db_backtesting)
         db.commit()
         return True
     return False
