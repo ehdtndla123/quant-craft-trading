@@ -76,6 +76,14 @@ class Bot(Base):
     trading_bots = relationship("TradingBot", back_populates="bot")
 
 
+class TradingbotStatus(enum.Enum):
+    # 대기중
+    PENDING = "대기중"
+    RUNNING = "실행중"
+    STOPPING = "중지중"
+    STOPPED = "중지됨"
+
+
 class TradingBot(Base):
     __tablename__ = "trading_bots"
     id = Column(Integer, primary_key=True, index=True)
@@ -87,6 +95,7 @@ class TradingBot(Base):
     strategy = relationship("Strategy", back_populates="trading_bots")
     orders = relationship("Order", back_populates="trading_bot")
     trades = relationship("Trade", back_populates="trading_bot")
+    status = Column(Enum(TradingbotStatus), default=TradingbotStatus.PENDING)
 
 
 class Order(Base):
