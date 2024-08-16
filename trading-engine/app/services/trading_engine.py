@@ -10,14 +10,14 @@ from app.services.broker_service import BrokerService
 from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
 from app.core.config import settings
-from app.db.models import BotStrategy
+from app.db.models import TradingBot
 
 
 class TradingEngine:
-    def __init__(self, bot_strategy: BotStrategy):
-        self.bot_strategy = bot_strategy
-        self.bot = bot_strategy.bot
-        self.db_strategy = bot_strategy.strategy
+    def __init__(self, trading_bot: TradingBot):
+        self.trading_bot = trading_bot
+        self.bot = trading_bot.bot
+        self.db_strategy = trading_bot.strategy
 
         self.symbol = self.db_strategy.symbol
         self.timeframe = self.db_strategy.timeframe
@@ -33,7 +33,8 @@ class TradingEngine:
             leverage=self.db_strategy.leverage,
             trade_on_close=self.db_strategy.trade_on_close,
             hedging=self.db_strategy.hedge_mode,
-            exclusive_orders=self.db_strategy.exclusive_mode
+            exclusive_orders=self.db_strategy.exclusive_mode,
+            trading_bot_id=self.trading_bot.id
         )
 
         strategy_module = importlib.import_module("app.strategy.strategy")
@@ -60,7 +61,7 @@ class TradingEngine:
                             }, index=[pd.to_datetime(timestamp, unit='ms')], dtype=float)
 
                             if not new_row.empty:
-                                self.data = pd.concat([self.data, new_row],axis=0)
+                                self.data = pd.concat([self.data, new_row], axis=0)
                                 self.data = self.data.sort_index()
                                 self.data = self.data.tail(100)
 
@@ -97,9 +98,6 @@ class TradingEngine:
 
         self.broker_service.process_orders()
         self._strategy.next()
-
-        # 현재 상태 출력
-        self.broker_service.print_status()
 
     async def run(self):
         self.is_running = True

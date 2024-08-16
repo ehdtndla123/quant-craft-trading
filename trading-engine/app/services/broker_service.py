@@ -11,7 +11,7 @@ import warnings
 from app.model.broker_interface import IBroker
 
 class BrokerService(IBroker):
-    def __init__(self, db: Session, cash: float, commission: float, dry_run: bool, leverage: float, trade_on_close: bool, hedging: bool, exclusive_orders: bool):
+    def __init__(self, db: Session, cash: float, commission: float, dry_run: bool, leverage: float, trade_on_close: bool, hedging: bool, exclusive_orders: bool,trading_bot_id: int):
         self.db = db
         self.cash = cash
         self._commission = commission
@@ -20,6 +20,7 @@ class BrokerService(IBroker):
         self._hedging = hedging
         self._exclusive_orders = exclusive_orders
         self.equityList = []
+        self._trading_bot_id = trading_bot_id
         self._data = None
 
     def update_data(self, new_data: pd.DataFrame):
@@ -82,7 +83,8 @@ class BrokerService(IBroker):
             "tp_price": tp,
             "status": "PENDING",
             "is_contingent": trade is not None,
-            "trade_id": trade.id if trade else None
+            "trade_id": trade.id if trade else None,
+            "trading_bot_id": self._trading_bot_id
         }
 
         # If exclusive orders (each new order auto-closes previous orders/position),
@@ -261,7 +263,8 @@ class BrokerService(IBroker):
                 "entry_price": adjusted_price,
                 "entry_time": pd.Timestamp.now(),
                 "exit_price": None,
-                "exit_time": None
+                "exit_time": None,
+                "trading_bot_id": self._trading_bot_id,
             }
             new_trade = trade_service.create_trade(self.db, trade_data)
 
@@ -291,7 +294,8 @@ class BrokerService(IBroker):
             "stop_price": stop_price,
             "status": "PENDING",
             "is_contingent": True,
-            "trade_id": trade_id
+            "trade_id": trade_id,
+            "trading_bot_id": self._trading_bot_id
         }
 
     def _check_sl_tp_execution(self, order: Order, is_market_order: bool):

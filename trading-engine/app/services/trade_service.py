@@ -98,3 +98,11 @@ def get_trade_info(trade: Trade, current_price: float) -> dict:
         "pl_pct": calculate_pl_pct(trade, current_price),
         "value": calculate_value(trade, current_price)
     }
+
+
+def get_open_trades_by_bot(db: Session, trading_bot_id: int) -> List[Trade]:
+    return db.query(Trade).filter(Trade.trading_bot_id == trading_bot_id, Trade.exit_price == None).all()
+
+
+def get_closed_trades_by_bot(db: Session, trading_bot_id: int) -> List[Trade]:
+    return db.query(Trade).filter(Trade.trading_bot_id == trading_bot_id, Trade.exit_price != None).all()
