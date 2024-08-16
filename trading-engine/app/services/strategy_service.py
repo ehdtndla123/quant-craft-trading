@@ -1,38 +1,23 @@
-# app/services/strategy_service.py
+from app.repositories import strategy_repository
+from app.schemas.strategy import StrategyCreate, StrategyUpdate
 from sqlalchemy.orm import Session
-from app.db.models import Strategy
 
 
-def create_strategy(db: Session, strategy_data: dict) -> Strategy:
-    new_strategy = Strategy(**strategy_data)
-    db.add(new_strategy)
-    db.commit()
-    db.refresh(new_strategy)
-    return new_strategy
+def create_strategy(db: Session, strategy_data: StrategyCreate):
+    return strategy_repository.create_strategy(db, strategy_data.dict())
 
 
-def get_strategy(db: Session, strategy_id: int) -> Strategy:
-    return db.query(Strategy).filter(Strategy.id == strategy_id).first()
+def get_strategy(db: Session, strategy_id: int):
+    return strategy_repository.get_strategy(db, strategy_id)
 
 
 def get_strategies(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Strategy).offset(skip).limit(limit).all()
+    return strategy_repository.get_strategies(db, skip, limit)
 
 
-def update_strategy(db: Session, strategy_id: int, strategy_data: dict) -> Strategy:
-    db_strategy = get_strategy(db, strategy_id)
-    if db_strategy:
-        for key, value in strategy_data.items():
-            setattr(db_strategy, key, value)
-        db.commit()
-        db.refresh(db_strategy)
-    return db_strategy
+def update_strategy(db: Session, strategy_id: int, strategy_data: StrategyUpdate):
+    return strategy_repository.update_strategy(db, strategy_id, strategy_data.dict())
 
 
-def delete_strategy(db: Session, strategy_id: int) -> bool:
-    db_strategy = get_strategy(db, strategy_id)
-    if db_strategy:
-        db.delete(db_strategy)
-        db.commit()
-        return True
-    return False
+def delete_strategy(db: Session, strategy_id: int):
+    return strategy_repository.delete_strategy(db, strategy_id)

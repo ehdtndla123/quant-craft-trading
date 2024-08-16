@@ -35,7 +35,7 @@ def update_order(db: Session, order_id: int, order_data: dict) -> Order:
 def cancel_order(db: Session, order_id: int) -> Order:
     order = get_order(db, order_id)
     if order:
-        order.status = "CANCELLED"
+        order.status = "CANCELED"
         db.commit()
         db.refresh(order)
     return order
@@ -44,3 +44,7 @@ def cancel_order(db: Session, order_id: int) -> Order:
 def is_order_open(db: Session, order_id: int) -> bool:
     order = get_order(db, order_id)
     return order and order.status == "PENDING"
+
+
+def get_open_orders_by_bot(db: Session, trading_bot_id: int) -> List[Order]:
+    return db.query(Order).filter(Order.trading_bot_id == trading_bot_id, Order.status == "PENDING").all()
