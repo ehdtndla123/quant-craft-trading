@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey, Boolean, Text, Table, Enum
+from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey, Boolean, Enum, Text
 from sqlalchemy.orm import relationship
 from app.db.database import Base
 import datetime
@@ -22,8 +22,13 @@ class Backtesting(Base):
     strategy_name = Column(String, index=True)
     start_date = Column(String)
     end_date = Column(String)
-    parameters = Column(Text)
-    results = Column(Text)
+    initial_capital = Column(Float)
+    final_equity = Column(Float)
+    total_return = Column(Float)
+    max_drawdown = Column(Float)
+    win_rate = Column(Float)
+    profit_factor = Column(Float)
+    total_trades = Column(Integer)
     trades = Column(Text)
     equity_curve = Column(Text)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
