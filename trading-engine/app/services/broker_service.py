@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
 from app.db.models import Trade, Bot, TradingBot
 from app.model.broker_interface import IBroker
-from app.core.config import Settings
+from app.core.config import settings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class BrokerService(IBroker):
 
     def _create_kafka_producer(self) -> KafkaProducer:
         return KafkaProducer(
-            bootstrap_servers=Settings.KAFKA_BOOTSTRAP_SERVERS,
+            bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
             value_serializer=lambda v: json.dumps(v).encode('utf-8')
         )
 
@@ -60,7 +60,7 @@ class BrokerService(IBroker):
 
     def _send_order_to_kafka(self, order_data: Dict[str, Any]) -> None:
         try:
-            self.kafka_producer.send(Settings.KAFKA_ORDERS_TOPIC, order_data)
+            self.kafka_producer.send(settings.KAFKA_ORDERS_TOPIC, order_data)
             self.kafka_producer.flush()
             logger.info(f"Order {order_data['order_id']} sent to Kafka!")
         except Exception as e:
