@@ -19,6 +19,8 @@ class TradingEngine:
         self.broker_service = BrokerService(
             self.bot,
             self.trading_bot,
+            self.symbol,
+            self.db_strategy.exchange,
             self.db_strategy.leverage,
             self.db_strategy.exclusive_order,
             self.db_strategy.hedge_mode
