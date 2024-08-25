@@ -6,15 +6,13 @@ import enum
 
 
 class OrderStatus(enum.Enum):
-    PENDING = "pending"
-    OPEN = "open"
-    CLOSED = "closed"
-    CANCELED = "canceled"
+    PENDING = "PENDING"
+    OPEN = "OPEN"
+    FILLED = "FILLED"
+    CANCELED = "CANCELED"
+    PARTIALLY_FILLED = "PARTIALLY_FILLED"
 
 
-class TradeStatus(enum.Enum):
-    OPEN = "open"
-    CLOSED = "closed"
 
 
 class Backtesting(Base):
@@ -48,13 +46,11 @@ class Strategy(Base):
     name = Column(String, index=True)
     description = Column(String)
     leverage = Column(Float)
-    trade_on_close = Column(Boolean, default=False)
+    exclusive_orders = Column(Boolean, default=False)
     hedge_mode = Column(Boolean, default=False)
-    exclusive_mode = Column(Boolean, default=False)
     timeframe = Column(String)
     symbol = Column(String)
     exchange = Column(String)
-    commission = Column(Float)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
@@ -115,10 +111,10 @@ class Order(Base):
     trading_bot = relationship("TradingBot", back_populates="orders")
 
     trade_id = Column(Integer, ForeignKey('trades.id'), nullable=True)
-    parent_trade_id = Column(Integer, ForeignKey('trades.id'), nullable=True)
-
     trade = relationship("Trade", foreign_keys=[trade_id], back_populates="orders")
-    parent_trade = relationship("Trade", foreign_keys=[parent_trade_id], back_populates="child_orders")
+
+    parent_order_id = Column(Integer, ForeignKey('orders.id'), nullable=True)
+    parent_order = relationship("Order", remote_side=[id], backref="child_orders")
 
     @property
     def is_long(self):
@@ -137,21 +133,13 @@ class Trade(Base):
     exit_price = Column(Float, nullable=True)
     entry_time = Column(DateTime)
     exit_time = Column(DateTime, nullable=True)
-    status = Column(Enum(TradeStatus))
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
     trading_bot_id = Column(Integer, ForeignKey('trading_bots.id'))
     trading_bot = relationship("TradingBot", back_populates="trades")
 
-    sl_order_id = Column(Integer, ForeignKey('orders.id'), nullable=True)
-    sl_order = relationship("Order", foreign_keys=[sl_order_id], overlaps="trade")
-
-    tp_order_id = Column(Integer, ForeignKey('orders.id'), nullable=True)
-    tp_order = relationship("Order", foreign_keys=[tp_order_id], overlaps="trade")
-
-    orders = relationship("Order", foreign_keys=[Order.trade_id], back_populates="trade")
-    child_orders = relationship("Order", foreign_keys=[Order.parent_trade_id], back_populates="parent_trade")
+    orders = relationship("Order", back_populates="trade")
 
     @property
     def is_long(self):
