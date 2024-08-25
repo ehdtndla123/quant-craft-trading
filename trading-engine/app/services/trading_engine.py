@@ -22,7 +22,7 @@ class TradingEngine:
             self.symbol,
             self.db_strategy.exchange,
             self.db_strategy.leverage,
-            self.db_strategy.exclusive_order,
+            self.db_strategy.exclusive_orders,
             self.db_strategy.hedge_mode
         )
         self.strategy = StrategyManager.get_strategy(self.db_strategy.name)
