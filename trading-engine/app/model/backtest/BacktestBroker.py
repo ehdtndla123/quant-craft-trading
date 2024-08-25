@@ -316,6 +316,8 @@ class Broker(IBroker):
             trade.tp = tp
         if sl:
             trade.sl = sl
+    def update_data(self, new_data: float):
+        pass
 
 class Position:
     """

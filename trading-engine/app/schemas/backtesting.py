@@ -1,30 +1,29 @@
-from pydantic import BaseModel
-from typing import Dict, List, Union
 from datetime import datetime
+from pydantic import BaseModel
 
 
 class BacktestingBase(BaseModel):
     strategy_id: int
-    parameters: Dict
-    results: Dict
-    trades: List[Dict]
-    equity_curve: List[Dict]
+    strategy_name: str
+    start_date: str
+    end_date: str
+    initial_capital: float
+    final_equity: float
+    total_return: float
+    max_drawdown: float
+    win_rate: float
+    profit_factor: float
+    total_trades: int
+    trades: str
+    equity_curve: str
 
 
-class BacktestingCreate(BaseModel):
-    strategy_id: int
-    parameters: Dict
-    results: Dict
-    trades: List[Dict]
-    equity_curve: List[Dict]
+class BacktestingCreate(BacktestingBase):
+    pass
 
 
 class BacktestingResponse(BacktestingCreate):
-    strategy_name: str
-    parameters: Dict
-    results: Dict
-    trades: List[Dict]
-    equity_curve: List[Dict]
+    id: int
     created_at: datetime
 
     class Config:
@@ -36,3 +35,4 @@ class BacktestRunRequest(BaseModel):
     end_date: str
     strategy_id: int
     cash: float
+    commission: float
