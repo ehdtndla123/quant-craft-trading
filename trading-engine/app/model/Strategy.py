@@ -12,13 +12,6 @@ from .Order import Order
 
 
 class Strategy(metaclass=ABCMeta):
-    """
-    A trading strategy base class. Extend this class and
-    override methods
-    `backtesting.backtesting.Strategy.init` and
-    `backtesting.backtesting.Strategy.next` to define
-    your own strategy.
-    """
     def __init__(self, broker, data, params):
         self._indicators = []
         self._broker: IBroker = broker
@@ -170,11 +163,7 @@ class Strategy(metaclass=ABCMeta):
             stop: float = None,
             sl: float = None,
             tp: float = None):
-        """
-        Place a new long order. For explanation of parameters, see `Order` and its properties.
 
-        See also `Strategy.sell()`.
-        """
         assert 0 < size < 1 or round(size) == size, \
             "size must be a positive fraction of equity, or a positive whole number of units"
         return self._broker.new_order(size, limit, stop, sl, tp)
@@ -251,3 +240,8 @@ class Strategy(metaclass=ABCMeta):
     def update_data(self, new_data: pd.DataFrame):
         """실시간으로 데이터 업데이트"""
         self._data = new_data.reset_index(drop=True)  # 인덱스 리셋
+        self.init()  # 전략 초기화
+
+    def update_data_broker(self, new_data: float):
+        """실시간으로 데이터 업데이트"""
+        self._broker.update_data(new_data)
