@@ -8,7 +8,6 @@ from app.services.trading_engine import TradingEngine
 from app.services import trading_bot_service
 from app.db.database import SessionLocal
 from app.db.models import TradingbotStatus
-from app.services.broker_service import BrokerService
 
 
 def worker_process(worker_id: int, task_queue: Queue, result_queue: Queue):
@@ -31,16 +30,7 @@ async def async_worker(worker_id: int, task_queue: Queue, result_queue: Queue):
 
         if action == "start":
             trading_bot = params
-            broker_service = BrokerService(
-                cash=trading_bot.bot.cash,
-                commission=trading_bot.strategy.commission,
-                leverage=trading_bot.strategy.leverage,
-                trade_on_close=trading_bot.strategy.trade_on_close,
-                hedging=trading_bot.strategy.hedge_mode,
-                exclusive_orders=trading_bot.strategy.exclusive_mode,
-                trading_bot_id=trading_bot.id
-            )
-            engine = TradingEngine(trading_bot, broker_service)
+            engine = TradingEngine(trading_bot)
             bot_engines[trading_bot_id] = engine
             task = asyncio.create_task(engine.run())
             bot_processes[trading_bot_id] = task
@@ -60,8 +50,7 @@ async def async_worker(worker_id: int, task_queue: Queue, result_queue: Queue):
             if trading_bot_id in bot_engines:
                 engine = bot_engines[trading_bot_id]
                 engine_data = {
-                    "cash": engine.broker_service.cash,
-                    "equity": engine.broker_service.equityList,
+                    "equity": engine.broker_service.equity,
                     "last_price": engine.broker_service.last_price,
                 }
                 result_queue.put(("engine_data", trading_bot_id, engine_data))
@@ -89,18 +78,6 @@ class TradingEngineManager:
         self.workers.append(worker)
         self.worker_last_heartbeat[worker_id] = time.time()
 
-    def _create_broker_service(self, trading_bot):
-        if trading_bot.bot.dry_run:
-            return BrokerService(
-                trading_bot.bot.cash,
-                trading_bot.strategy.commission,
-                trading_bot.strategy.leverage,
-                trading_bot.strategy.trade_on_close,
-                trading_bot.strategy.hedge_mode,
-                trading_bot.strategy.exclusive_mode,
-                trading_bot.id
-            )
-        # else:
 
     async def start_bot(self, trading_bot_id: int):
         db = SessionLocal()

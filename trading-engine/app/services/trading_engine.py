@@ -2,13 +2,13 @@ import asyncio
 import traceback
 import pandas as pd
 from app.db.models import TradingBot
+from app.services.broker_service import BrokerService
 from app.services.data_loader_service import DataLoaderService
-from app.model.broker_interface import IBroker
 from app.services.strategy_manager import StrategyManager
 
 
 class TradingEngine:
-    def __init__(self, trading_bot: TradingBot, broker_service: IBroker):
+    def __init__(self, trading_bot: TradingBot):
         self.trading_bot = trading_bot
         self.bot = trading_bot.bot
         self.db_strategy = trading_bot.strategy
@@ -16,7 +16,13 @@ class TradingEngine:
         self.timeframe = self.db_strategy.timeframe
         self.data = pd.DataFrame(columns=['Open', 'High', 'Low', 'Close', 'Volume'])
         self.is_running = False
-        self.broker_service = broker_service
+        self.broker_service = BrokerService(
+            self.bot,
+            self.trading_bot,
+            self.db_strategy.leverage,
+            self.db_strategy.exclusive_order,
+            self.db_strategy.hedge_mode
+        )
         self.strategy = StrategyManager.get_strategy(self.db_strategy.name)
         self._strategy = None
 
@@ -37,10 +43,8 @@ class TradingEngine:
             self._strategy = self.strategy(self.broker_service, self.data, kwargs)
             self._strategy.init()
 
-        self.broker_service.update_data(self.data)
+        self._strategy.update_data_broker(self.data['Close'].iloc[-1])
         self._strategy.update_data(self.data)
-
-        self.broker_service.process_orders()
         self._strategy.next()
 
     async def run(self):
