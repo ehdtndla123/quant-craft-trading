@@ -1,7 +1,6 @@
 import pandas as pd
 import ccxt
 import os
-import ccxt.pro as ccxtpro
 
 
 class DataLoaderService:
@@ -64,29 +63,3 @@ class DataLoaderService:
         print(f"Data saved to {file_path}")
 
         return file_path
-
-    @staticmethod
-    async def fetch_real_time_data(exchange_name: str, symbol: str, timeframe: str,
-                                   last_timestamp: pd.Timestamp = None) -> pd.DataFrame:
-        exchange = getattr(ccxtpro, exchange_name)()
-
-        try:
-            if exchange.has['watchOHLCV']:
-                candles = await exchange.watch_ohlcv(symbol, timeframe)
-                df = pd.DataFrame(candles, columns=['timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
-                df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms', utc=True)
-                df.set_index('timestamp', inplace=True)
-
-                if last_timestamp:
-                    df = df[df.index > last_timestamp]
-                print(df)
-                return df
-            else:
-                since = int(last_timestamp.timestamp() * 1000) if last_timestamp else None
-                candles = await exchange.fetch_ohlcv(symbol, timeframe, since=since, limit=1)
-                df = pd.DataFrame(candles, columns=['timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
-                df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms', utc=True)
-                df.set_index('timestamp', inplace=True)
-                return df
-        finally:
-            await exchange.close()

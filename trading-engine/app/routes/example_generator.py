@@ -26,11 +26,13 @@ def create_example_trading_bot(db: Session = Depends(get_db)):
         name="MyStrategy",
         description="A simple trading strategy",
         leverage=1.0,
-        exclusive_order=False,
+        trade_on_close=False,
         hedge_mode=True,
+        exclusive_mode=True,
         timeframe="1m",
         symbol="BTC/USDT",
-        exchange="binance"
+        exchange="binance",
+        commission=0.001
     )
     new_strategy = strategy_service.create_strategy(db, strategy_create)
 

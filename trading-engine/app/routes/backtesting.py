@@ -39,7 +39,6 @@ def run_backtest(request: BacktestRunRequest, db: Session = Depends(get_db)):
             data,
             strategy,
             request.cash,
-            request.commission,
             request.start_date,
             request.end_date
         )
@@ -48,11 +47,3 @@ def run_backtest(request: BacktestRunRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred while running the backtest: {str(e)}")
-
-
-@router.delete("/backtestings/{backtesting_id}", response_model=bool)
-def delete_bot(backtesting_id: int, db: Session = Depends(get_db)):
-    result = backtesting_service.delete(db, backtesting_id)
-    if not result:
-        raise HTTPException(status_code=404, detail="Bot not found")
-    return result

@@ -51,7 +51,7 @@ class BacktestManager:
 
         # 동적으로 전략 클래스 불러오기
         # strategy_module = importlib.import_module(f"app.service.{strategy_name}")
-        strategy_module = importlib.import_module(f"app.service.drl_strategy")
+        strategy_module = importlib.import_module(f"app.service.drl_simple_strategy")
         StrategyClass = getattr(strategy_module, strategy_name)
 
         bt = Backtest(data, StrategyClass, commission=commission, cash=cash,

@@ -1,10 +1,16 @@
+# app/trading_bot.py
+
 import asyncio
+import importlib
 import traceback
+
+import ccxt.pro as ccxt
 import pandas as pd
-from app.db.models import TradingBot
 from app.services.broker_service import BrokerService
-from app.services.data_loader_service import DataLoaderService
-from app.services.strategy_manager import StrategyManager
+from sqlalchemy.orm import Session
+from app.db.database import SessionLocal
+from app.core.config import settings
+from app.db.models import TradingBot
 
 
 class TradingEngine:
@@ -12,23 +18,65 @@ class TradingEngine:
         self.trading_bot = trading_bot
         self.bot = trading_bot.bot
         self.db_strategy = trading_bot.strategy
+
         self.symbol = self.db_strategy.symbol
         self.timeframe = self.db_strategy.timeframe
         self.data = pd.DataFrame(columns=['Open', 'High', 'Low', 'Close', 'Volume'])
         self.is_running = False
-        self.broker_service = BrokerService(
-            self.bot,
-            self.trading_bot,
-            self.symbol,
-            self.db_strategy.exchange,
-            self.db_strategy.leverage,
-            self.db_strategy.exclusive_orders,
-            self.db_strategy.hedge_mode
-        )
-        self.strategy = StrategyManager.get_strategy(self.db_strategy.name)
-        self._strategy = None
+        self.db: Session = SessionLocal()
 
-    def _timeframe_to_seconds(self):
+        self.broker_service = BrokerService(
+            self.db,
+            cash=self.bot.cash,
+            commission=self.db_strategy.commission,
+            dry_run=self.bot.dry_run,
+            leverage=self.db_strategy.leverage,
+            trade_on_close=self.db_strategy.trade_on_close,
+            hedging=self.db_strategy.hedge_mode,
+            exclusive_orders=self.db_strategy.exclusive_mode,
+            trading_bot_id=self.trading_bot.id
+        )
+
+        strategy_module = importlib.import_module("app.strategy.strategy")
+        self.strategy = getattr(strategy_module, self.db_strategy.name)
+        self._strategy = None
+        self.exchange = getattr(ccxt, self.db_strategy.exchange)()
+
+    async def simulate_ohlcv(self):
+        print(f"Starting to simulate OHLCV data for {self.symbol} on {self.exchange.name}")
+        last_timestamp = None
+        while self.is_running:
+            if self.exchange.has['watchOHLCV']:
+                try:
+                    candles = await self.exchange.watch_ohlcv(self.symbol, self.timeframe, None, 1)
+                    for candle in candles:
+                        timestamp, open_price, high, low, close, volume = candle
+                        if last_timestamp is None or timestamp >= last_timestamp + self.timeframe_to_seconds() * 1000:
+                            new_row = pd.DataFrame({
+                                'Open': [open_price],
+                                'High': [high],
+                                'Low': [low],
+                                'Close': [close],
+                                'Volume': [volume]
+                            }, index=[pd.to_datetime(timestamp, unit='ms')], dtype=float)
+
+                            if not new_row.empty:
+                                self.data = pd.concat([self.data, new_row], axis=0)
+                                self.data = self.data.sort_index()
+                                self.data = self.data.tail(100)
+
+                                if len(self.data) >= 2:
+                                    self.execute_strategy()
+
+                            last_timestamp = timestamp
+
+                except Exception as e:
+                    print("Full traceback:")
+                    print(traceback.format_exc())
+                    print(f"An error occurred: {e}")
+                    await asyncio.sleep(1)
+
+    def timeframe_to_seconds(self):
         unit = self.timeframe[-1]
         amount = int(self.timeframe[:-1])
         if unit == 'm':
@@ -40,41 +88,24 @@ class TradingEngine:
         else:
             raise ValueError("Unsupported timeframe unit")
 
-    def _execute_strategy(self, **kwargs):
+    def execute_strategy(self, **kwargs):
         if self._strategy is None:
             self._strategy = self.strategy(self.broker_service, self.data, kwargs)
             self._strategy.init()
 
-        self._strategy.update_data_broker(self.data['Close'].iloc[-1])
+        self.broker_service.update_data(self.data)
         self._strategy.update_data(self.data)
+
+        self.broker_service.process_orders()
         self._strategy.next()
 
     async def run(self):
         self.is_running = True
-        last_timestamp = None
-        wait_time = self._timeframe_to_seconds()
-        while self.is_running:
-            try:
-                new_data = await DataLoaderService.fetch_real_time_data(
-                    self.db_strategy.exchange, self.symbol, self.timeframe, last_timestamp
-                )
-
-                if not new_data.empty:
-                    self.data = pd.concat([self.data, new_data], axis=0)
-                    self.data = self.data.sort_index()
-                    self.data = self.data.tail(100)
-
-                    if len(self.data) >= 2:
-                        self._execute_strategy()
-
-                    last_timestamp = self.data.index[-1]
-                await asyncio.sleep(wait_time)
-
-            except Exception as e:
-                print("Full traceback:")
-                print(traceback.format_exc())
-                print(f"An error occurred: {e}")
-                await asyncio.sleep(10)
+        print("Starting the bot...")
+        await self.simulate_ohlcv()
 
     async def stop(self):
         self.is_running = False
+        print("\nFinal Results:")
+        print(f"Total Return: {(self.broker_service.equity / settings.INITIAL_CASH - 1) * 100:.2f}%")
+        self.db.close()
