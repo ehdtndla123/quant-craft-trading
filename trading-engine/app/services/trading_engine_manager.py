@@ -50,8 +50,7 @@ async def async_worker(worker_id: int, task_queue: Queue, result_queue: Queue):
             if trading_bot_id in bot_engines:
                 engine = bot_engines[trading_bot_id]
                 engine_data = {
-                    "cash": engine.broker_service.cash,
-                    "equity": engine.broker_service.equityList,
+                    "equity": engine.broker_service.equity,
                     "last_price": engine.broker_service.last_price,
                 }
                 result_queue.put(("engine_data", trading_bot_id, engine_data))
@@ -78,6 +77,7 @@ class TradingEngineManager:
         worker.start()
         self.workers.append(worker)
         self.worker_last_heartbeat[worker_id] = time.time()
+
 
     async def start_bot(self, trading_bot_id: int):
         db = SessionLocal()
