@@ -159,6 +159,7 @@ for i in range(len(test_data) - state_size -1):
     ans[LONG if data.Close[state_size + i + 1] - data.Close[state_size + i] > 0 else SHORT] += 1
     ans = ans.to(device=device, dtype=torch.float32)
     output = model(state).squeeze(1)
-    output = 1 if output > 0 else 0
+    output = torch.argmax(output)
+    ans = torch.argmax(ans)
     correct.append(1 if output == ans else 0)
 print(f'Test Accuricy = {sum(correct) / len(correct)}')
