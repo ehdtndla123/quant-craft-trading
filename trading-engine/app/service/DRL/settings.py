@@ -8,6 +8,7 @@ N_TRAIN = 300
 ACTION_SIZE = 2
 HIDDEN_SIZE = 2 ** 9
 BATCH_SIZE = 2 ** 9
+BUFFER_SIZE = 100000
 
 # Define Actions
 LONG = 0

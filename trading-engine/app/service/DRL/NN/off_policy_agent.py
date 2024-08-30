@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as torchf
 from core_optimizer import CoRe
 
-from ..settings import N_TRAIN, ACTION_SIZE, HIDDEN_SIZE, BATCH_SIZE
+from ..settings import N_TRAIN, ACTION_SIZE, HIDDEN_SIZE, BATCH_SIZE, BUFFER_SIZE
 
 class OffPolicyAgent(ABC):
     def __init__(self, device):
@@ -19,7 +19,7 @@ class OffPolicyAgent(ABC):
         self.input_size         = self.state_size
         # Hyperparameters
         self.batch_size         = BATCH_SIZE
-        self.buffer_size        = 1000000
+        self.buffer_size        = BUFFER_SIZE
         self.discount_factor    = 0.99
         self.learning_rate      = 0.001
         self.tau                = 0.003
@@ -73,8 +73,8 @@ class OffPolicyAgent(ABC):
     def create_optimizer(self, network):
         # return torch.optim.SGD(network.parameters(), self.learning_rate)
         # return torch.optim.RMSprop(network.parameters(), self.learning_rate)
-        # return torch.optim.AdamW(network.parameters(), self.learning_rate)
-        return CoRe(network.parameters(), self.learning_rate)
+        return torch.optim.AdamW(network.parameters(), self.learning_rate)
+        # return CoRe(network.parameters(), self.learning_rate)
 
     def create_lr_scheduler(self, optimizer):
         return torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=1000, eta_min=0.00001)
