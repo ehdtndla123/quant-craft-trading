@@ -16,7 +16,6 @@ from ..settings import INDICATOR_NUM
 # Origin by: Seunghyeop
 # TD3 with LSTM & CNN 1 lstm parallel architecture
 
-
 class Actor(Network):
     def __init__(self, name, state_size, action_size, hidden_size):
         super(Actor, self).__init__(name)
