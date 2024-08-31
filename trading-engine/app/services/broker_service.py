@@ -4,7 +4,7 @@ from uuid import uuid4
 from kafka import KafkaProducer
 from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
-from app.db.models import Trade, Bot, TradingBot
+from app.db.models import Bot, TradingBot
 from app.model.broker_interface import IBroker
 from app.core.config import settings
 import logging
@@ -33,7 +33,7 @@ class BrokerService(IBroker):
 
     def new_order(self, size: float, limit: Optional[float] = None,
                   stop: Optional[float] = None, sl: Optional[float] = None,
-                  tp: Optional[float] = None, *, trade: Optional[Trade] = None):
+                  tp: Optional[float] = None, *args, **kwargs) -> Dict[str, Any]:
         order_id = str(uuid4())
         order_data = self._create_order_data(order_id, size, limit, stop, sl, tp)
         self._send_order_to_kafka(order_data)
