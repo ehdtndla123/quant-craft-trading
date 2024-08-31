@@ -10,7 +10,7 @@
 #     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
-from app.service.backtest_train import BacktestManager
+from app.ML.backtest_train import BacktestManager
 BacktestManager.run_backtest(
     exchange_name="binance",
     symbol="BTC/USDT",
