@@ -5,16 +5,6 @@ import datetime
 import enum
 
 
-class OrderStatus(enum.Enum):
-    PENDING = "PENDING"
-    OPEN = "OPEN"
-    FILLED = "FILLED"
-    CANCELED = "CANCELED"
-    PARTIALLY_FILLED = "PARTIALLY_FILLED"
-
-
-
-
 class Backtesting(Base):
     __tablename__ = "backtesting"
 
@@ -94,62 +84,4 @@ class TradingBot(Base):
 
     bot = relationship("Bot", back_populates="trading_bots")
     strategy = relationship("Strategy", back_populates="trading_bots")
-    orders = relationship("Order", back_populates="trading_bot")
-    trades = relationship("Trade", back_populates="trading_bot")
     status = Column(Enum(TradingbotStatus), default=TradingbotStatus.PENDING)
-
-
-class Order(Base):
-    __tablename__ = "orders"
-    id = Column(Integer, primary_key=True, index=True)
-    size = Column(Float)
-    limit_price = Column(Float, nullable=True)
-    stop_price = Column(Float, nullable=True)
-    sl_price = Column(Float, nullable=True)
-    tp_price = Column(Float, nullable=True)
-    status = Column(Enum(OrderStatus))
-    is_contingent = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
-
-    trading_bot_id = Column(Integer, ForeignKey('trading_bots.id'))
-    trading_bot = relationship("TradingBot", back_populates="orders")
-
-    trade_id = Column(Integer, ForeignKey('trades.id'), nullable=True)
-    trade = relationship("Trade", foreign_keys=[trade_id], back_populates="orders")
-
-    parent_order_id = Column(Integer, ForeignKey('orders.id'), nullable=True)
-    parent_order = relationship("Order", remote_side=[id], backref="child_orders")
-
-    @property
-    def is_long(self):
-        return self.size > 0
-
-    @property
-    def is_short(self):
-        return self.size < 0
-
-
-class Trade(Base):
-    __tablename__ = "trades"
-    id = Column(Integer, primary_key=True, index=True)
-    size = Column(Float)
-    entry_price = Column(Float)
-    exit_price = Column(Float, nullable=True)
-    entry_time = Column(DateTime)
-    exit_time = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
-
-    trading_bot_id = Column(Integer, ForeignKey('trading_bots.id'))
-    trading_bot = relationship("TradingBot", back_populates="trades")
-
-    orders = relationship("Order", back_populates="trade")
-
-    @property
-    def is_long(self):
-        return self.size > 0
-
-    @property
-    def is_short(self):
-        return self.size < 0

@@ -30,7 +30,7 @@ def create_example_trading_bot(db: Session = Depends(get_db)):
         hedge_mode=True,
         timeframe="1m",
         symbol="BTC/USDT",
-        exchange="binance"
+        exchange="simulated"
     )
     new_strategy = strategy_service.create_strategy(db, strategy_create)
 
