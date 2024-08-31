@@ -68,6 +68,8 @@ class DataLoaderService:
     @staticmethod
     async def fetch_real_time_data(exchange_name: str, symbol: str, timeframe: str,
                                    last_timestamp: pd.Timestamp = None) -> pd.DataFrame:
+        if exchange_name == 'simulated':
+            exchange_name = 'binance'
         exchange = getattr(ccxtpro, exchange_name)()
 
         try:
