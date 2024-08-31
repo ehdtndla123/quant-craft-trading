@@ -14,7 +14,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../../../'))
 
 from app.services.data_loader_service import DataLoaderService as DataLoader
-from app.service.Classifier.NN.LSTM_NN import LSTM_NN
+from app.ML.Classifier.NN.LSTM_NN import LSTM_NN
 
 def get_device():
     if torch.cuda.is_available():

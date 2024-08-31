@@ -1,4 +1,4 @@
-from app.service.DRL.env.drl_backtesting import Backtest
+from app.ML.DRL.env.drl_backtesting import Backtest
 # from backtesting import Backtest
 import pprint
 import importlib
@@ -50,7 +50,7 @@ class BacktestManager:
             data = pd.read_csv(file_path)
 
         # 동적으로 전략 클래스 불러오기
-        # strategy_module = importlib.import_module(f"app.service.{strategy_name}")
+        # strategy_module = importlib.import_module(f"app.ML.{strategy_name}")
         strategy_module = importlib.import_module(f"app.service.drl_simple_strategy")
         StrategyClass = getattr(strategy_module, strategy_name)
 

@@ -14,7 +14,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../../../'))
 
 from app.services.data_loader_service import DataLoaderService as DataLoader
-from app.service.Classifier.NN.LSTM_NN import LSTM_NN
+from app.ML.Classifier.NN.LSTM_NN import LSTM_NN
 LONG = 1
 SHORT = 0
 
@@ -83,6 +83,19 @@ timezone="Asia/Seoul"
 file_name = f"{exchange_name}_{symbol.replace('/', '_')}_{timeframe}_{start_time}_{end_time}.csv"
 file_path = os.path.join('data', file_name)
 
+# try:
+#     data = pd.read_csv(file_path)
+# except FileNotFoundError:
+#     DataLoader.save_data_from_ccxt(
+#         exchange_name=exchange_name,
+#         symbol=symbol,
+#         timeframe=timeframe,
+#         start_time=start_time,
+#         end_time=end_time,
+#         timezone=timezone
+#     )
+# finally:
+#     data = pd.read_csv(file_path)
 
 if not os.path.exists(file_path):
     print('downloading new datafile')
@@ -95,7 +108,10 @@ if not os.path.exists(file_path):
         timezone=timezone
     )
 
-test_data = pd.read_csv(file_path)
+data = pd.read_csv(file_path)
+
+train_data = data[0:int(len(data) * 0.8)]
+test_data = data[int(len(data) * 0.8):]
 classes = ('SHORT', 'LONG')
 
 batch_size = 2 ** 9
@@ -105,14 +121,32 @@ criterion = torch.nn.CrossEntropyLoss()
 # optimiser = optim.AdamW(model.parameters(), lr=learning_rate)
 optimiser = CoRe(model.parameters(), lr=learning_rate)
 
+# Training
+for e in range(epoch):
+    running_loss = 0.0
+    for _ in range(iter_in_epoch):
+        optimiser.zero_grad()
+        state, ans = batch(train_data, state_size, batch_size)
 
+        state = state.to(device=device, dtype=torch.float32)
+        ans = ans.to(device=device, dtype=torch.float32)
+
+        outputs = model(state)
+        outputs =torch.sign(outputs)
+
+        loss = criterion(outputs, ans)
+        loss.backward()
+        optimiser.step()
+        running_loss += loss.item()
+
+    print(f'epoch: {e+1}, loss: {running_loss / iter_in_epoch}')
 
 i = 0
 machine_dir = os.path.join(current_dir, '../../../', 'models/Classifier/', str(socket.gethostname()))
 model_dir = create_model_dir(machine_dir)
-model_path = os.path.join(machine_dir, 'classifier_0/classifier_net.pth')
+model_path = os.path.join(model_dir, 'classifier_net.pth')
 
-model.load_state_dict(torch.load(model_path, weights_only=True))
+torch.save(model.state_dict(), model_path)
 
 # Testing
 running_loss = 0.0
@@ -122,7 +156,7 @@ for i in range(len(test_data) - state_size -1):
     state = torch.from_numpy(np.array([state_tmp.Open.values, state_tmp.Close.values, state_tmp.High.values,
                         state_tmp.Low.values, state_tmp.Volume.values])).unsqueeze(1).to(device=device, dtype=torch.float32)
     ans = torch.zeros(2)
-    ans[LONG if test_data.Close[state_size + i + 1] - test_data.Close[state_size + i] > 0 else SHORT] += 1
+    ans[LONG if data.Close[state_size + i + 1] - data.Close[state_size + i] > 0 else SHORT] += 1
     ans = ans.to(device=device, dtype=torch.float32)
     output = model(state).squeeze(1)
     output = torch.argmax(output)
