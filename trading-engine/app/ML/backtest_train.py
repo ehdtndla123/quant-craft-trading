@@ -5,7 +5,7 @@ import importlib
 from app.services.data_loader_service import DataLoaderService as DataLoader
 
 
-from .DRL.NN.td3_xLSTM import TD3
+from .DRL.NN.td3_omniNet import TD3
 from .DRL.replaybuffer import ReplayBuffer
 from .DRL.storagemanager import StorageManager
 from .DRL.graph import Graph
@@ -51,7 +51,7 @@ class BacktestManager:
 
         # 동적으로 전략 클래스 불러오기
         # strategy_module = importlib.import_module(f"app.ML.{strategy_name}")
-        strategy_module = importlib.import_module(f"app.service.drl_simple_strategy")
+        strategy_module = importlib.import_module("app.ML.drl_simple_strategy")
         StrategyClass = getattr(strategy_module, strategy_name)
 
         bt = Backtest(data, StrategyClass, commission=commission, cash=cash,
@@ -61,7 +61,7 @@ class BacktestManager:
         A = Agent(symbol)
         episode = 0
         while True:
-            stats = bt.run(A)
+            stats = bt.run(A, len(data))
             episode += 1
             if episode % (MODEL_STORE_INTERVAL) == 0 or episode == 1:
                 pprint.pprint(stats)

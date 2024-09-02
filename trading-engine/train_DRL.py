@@ -14,7 +14,7 @@ from app.ML.backtest_train import BacktestManager
 BacktestManager.run_backtest(
     exchange_name="binance",
     symbol="BTC/USDT",
-    timeframe="1d",
+    timeframe="1m",
     start_time="2019-01-01",
     # start_time="2024-07-27",
     end_time="2024-07-30",
@@ -24,7 +24,7 @@ BacktestManager.run_backtest(
     cash=100000,
     exclusive_orders=True,
     # margin=0.2
-    margin=0.05
+    margin=0.008
 )
 
 # bt.plot(

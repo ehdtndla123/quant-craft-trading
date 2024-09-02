@@ -1096,7 +1096,7 @@ class Backtest:
         self._strategy = strategy
         self._results: Optional[pd.Series] = None
 
-    def run(self, agent=None, **kwargs) -> pd.Series:
+    def run(self, agent=None, d_len=None, **kwargs) -> pd.Series:
         """
         Run the backtest. Returns `pd.Series` with results and statistics.
 
@@ -1139,7 +1139,7 @@ class Backtest:
         broker: _Broker = self._broker(data=data)
         strategy: Strategy = self._strategy(broker, data, kwargs)
 
-        strategy.init(agent)
+        strategy.init(agent, d_len)
         data._update()  # Strategy.init might have changed/added to data.df
 
         # Indicators used in Strategy.next()

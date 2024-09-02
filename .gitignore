@@ -15,4 +15,11 @@ venv/
 
 # .DS_Store for macOS
 .DS_Store
+
+
+# Local data files
 Sunghjops-MacBook-Pro-2.local/
+uamdt2/
+uamdt3/
+DRLStrategy.html
+binance_BTC_USDT_1m_2019-01-01_2024-07-30.csv

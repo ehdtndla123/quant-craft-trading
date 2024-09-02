@@ -1,19 +1,21 @@
 from .DRL.env.drl_backtesting import Strategy
 # from backtesting import Strategy
 from .DRL.settings import MODEL_STORE_INTERVAL, GRAPH_DRAW_INTERVAL, N_TRAIN, LONG, \
-                        SHORT, CLOSE, HOLD, LIQUIFIED, DATA_DONE, DEMOCRATISATION, INDICATOR_NUM
+                        SHORT, CLOSE, HOLD, LIQUIFIED, DATA_DONE, DEMOCRATISATION, INDICATOR_NUM, \
+                            MIN_START_POINT, MAX_START_POINT_FROM, PRINT_STATUS_INTERVAL
 
 import torch
 import numpy as np
 import pandas as pd
 import time
+import random
 import warnings
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 
 class DRLStrategy(Strategy):
-    def init(self, agent):
+    def init(self, agent, data_length):
         self.agent = agent
         self.is_training = True
 
@@ -27,6 +29,9 @@ class DRLStrategy(Strategy):
         self.is_liquified = False
         self.is_data_done = False
         self.episode_start = time.perf_counter()
+
+        self.start_point = random.randint(MIN_START_POINT, data_length - MAX_START_POINT_FROM)
+        self.is_episode_started = False
 
     def resample_and_align(self, freq, reference_index):
         d = self.data.df
@@ -44,39 +49,6 @@ class DRLStrategy(Strategy):
 
         aligned_data = resampled_data.loc[resampled_data.index <= self.data.datetime[reference_index]].tail(self.agent.state_size)
         return aligned_data
-
-    # def resample_and_align(self, freq, reference_index):
-    #     d = self.data.df
-    #     d.loc[:, 'datetime'] = pd.to_datetime(d.loc[:, 'datetime'])
-    #     print(type(d.loc[0, 'datetime']))
-    #     resampled_data = d.groupby(pd.Grouper(key='datetime', freq=freq)).agg({
-    #         'Open': 'first',
-    #         'Close': 'last',
-    #         'High': 'max',
-    #         'Low': 'min',
-    #         'Volume': 'sum'
-    #     }).dropna()
-
-    #     aligned_data = resampled_data.loc[resampled_data.index <= self.data.datetime[reference_index]].tail(self.agent.state_size)
-        
-    #     return aligned_data
-
-    # def resample_and_align(self, freq, reference_index):
-    #     d = self.data.df
-
-    #     d.loc[:, 'datetime'] = pd.to_datetime(d.loc[:, 'datetime'])
-
-    #     resampled_data = d.groupby(d.loc[:, 'datetime'].dt.to_period(freq)).agg({
-    #         'Open': 'first',
-    #         'Close': 'last',
-    #         'High': 'max',
-    #         'Low': 'min',
-    #         'Volume': 'sum'
-    #     }).dropna()
-
-    #     aligned_data = resampled_data.loc[resampled_data.index.to_timestamp() <= self.data.datetime[reference_index]].tail(self.agent.state_size)
-
-    #     return aligned_data
 
     def get_state(self):
         one_minute_data = np.array([self.data.Open[-self.agent.state_size:],
@@ -167,9 +139,12 @@ class DRLStrategy(Strategy):
 
 
     def next(self):
-        if len(self.data) < N_TRAIN * 60 * 4 + 1:
+        if len(self.data) < self.start_point:
             return
-        print(f'step : {self.step}')
+        if not self.is_episode_started:
+            print(f'Episode starting from {self.data.datetime[-1]}')
+            self.is_episode_started = True
+        # print(f'step : {self.step}')
         state = torch.tensor(self.get_state()).detach().cpu().to(dtype=torch.float)
         self.previous_balance = self.current_balance
         self.current_balance = self.equity
@@ -191,7 +166,9 @@ class DRLStrategy(Strategy):
                 self.agent.loss_actor += loss_a
 
         self.step += 1
-        # print(self.step, ', ', action, ', Liquified: ', self.is_liquified, ', Data Done: ', self.is_data_done)
+
+        if self.step % PRINT_STATUS_INTERVAL == 0:
+            print(f'Current date time is {self.data.datetime[-1]}')
 
         if is_episode_done:
             self.finish_episode()

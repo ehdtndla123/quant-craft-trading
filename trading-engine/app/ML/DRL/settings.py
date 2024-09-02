@@ -1,5 +1,6 @@
 MODEL_STORE_INTERVAL = 100
 GRAPH_DRAW_INTERVAL = 10
+PRINT_STATUS_INTERVAL = 600
 
 INDICATOR_NUM = 26
 
@@ -22,6 +23,9 @@ DATA_DONE = 1
 
 # Reward Value
 DEMOCRATISATION = -100000
+
+MIN_START_POINT = N_TRAIN * 60 * 4 + 1
+MAX_START_POINT_FROM = 30 * 24 * 60
 
 def trade_done(env_self):
     env_self.is_data_done = True
