@@ -167,8 +167,8 @@ class DRLStrategy(Strategy):
 
         self.step += 1
 
-        # if self.step % PRINT_STATUS_INTERVAL == 0:
-        print(f'Current date time is {self.data.datetime[-1]}')
+        if self.step % PRINT_STATUS_INTERVAL == 0:
+            print(f'Current date time is {self.data.datetime[-1]}')
 
         if is_episode_done:
             self.finish_episode()
