@@ -58,7 +58,7 @@ class Actor(Network):
         if len(states.size()) == 2:
             states = torch.unsqueeze(states, dim=0)
             is_target = True
-        
+
         x = torch.flatten(self.omninet(states), start_dim=1)
         if is_target:
             x = x.squeeze(0)
@@ -81,10 +81,10 @@ class Critic(Network):
                 feature_redraw_interval = 1000 # how often to redraw the projection matrix for omni attention net - Performer
             )
 
-        self.action_linear1 = nn.Linear(action_size, hidden_size)
+        self.action_linear1 = nn.Linear(action_size, state_size)
 
         self.linear1 = nn.Sequential(
-                nn.Linear(state_size * INDICATOR_NUM + hidden_size, hidden_size),
+                nn.Linear(state_size * (INDICATOR_NUM + 1), hidden_size),
                 nn.SiLU(),
                 nn.Linear(hidden_size, hidden_size // 2 ** 1),
                 nn.SiLU(),
@@ -93,7 +93,7 @@ class Critic(Network):
                 nn.Linear(hidden_size // 2 ** 3, action_size),
                 nn.Sigmoid()
             )
-        
+
         self.omninet2 = Omninet(
                 dim = state_size,             # model dimension
                 depth = 3,                     # depth
@@ -105,10 +105,10 @@ class Critic(Network):
                 feature_redraw_interval = 1000 # how often to redraw the projection matrix for omni attention net - Performer
             )
 
-        self.action_linear2 = nn.Linear(action_size, hidden_size)
+        self.action_linear2 = nn.Linear(action_size, state_size)
 
         self.linear2 = nn.Sequential(
-                nn.Linear(state_size * INDICATOR_NUM + hidden_size, hidden_size),
+                nn.Linear(state_size * (INDICATOR_NUM + 1), hidden_size),
                 nn.SiLU(),
                 nn.Linear(hidden_size, hidden_size // 2 ** 1),
                 nn.SiLU(),
@@ -126,14 +126,16 @@ class Critic(Network):
             states = torch.unsqueeze(states, dim=0)
             actions = torch.unsqueeze(actions, dim=0)
             is_target = True
-            
+
         a = self.action_linear1(actions)
+        a = torch.unsqueeze(a, dim=1)
         x = torch.flatten(self.omninet1(torch.cat((states, a), dim=1)), start_dim=1)
         if is_target:
             x = x.squeeze(0)
         q1 = self.linear1(x)
 
         a = self.action_linear2(actions)
+        a = torch.unsqueeze(a, dim=1)
         x = torch.flatten(self.omninet2(torch.cat((states, a), dim=1)), start_dim=1)
         if is_target:
             x = x.squeeze(0)
@@ -149,6 +151,7 @@ class Critic(Network):
             is_target = True
 
         a = self.action_linear1(actions)
+        a = torch.unsqueeze(a, dim=1)
         x = torch.flatten(self.omninet1(torch.cat((states, a), dim=1)), start_dim=1)
         if is_target:
             x = x.squeeze(0)

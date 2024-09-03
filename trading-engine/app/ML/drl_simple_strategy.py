@@ -89,7 +89,7 @@ class DRLStrategy(Strategy):
 
 
         return np.concatenate((one_minute_data, five_minute_state, thirty_minute_state, one_hour_state, four_hour_state, np.array(self.previous_action).reshape(1, 300)), axis=0)
-        
+
 
     def reward(self, current_action, is_liq):
         rw = 0
@@ -167,8 +167,8 @@ class DRLStrategy(Strategy):
 
         self.step += 1
 
-        if self.step % PRINT_STATUS_INTERVAL == 0:
-            print(f'Current date time is {self.data.datetime[-1]}')
+        # if self.step % PRINT_STATUS_INTERVAL == 0:
+        print(f'Current date time is {self.data.datetime[-1]}')
 
         if is_episode_done:
             self.finish_episode()
