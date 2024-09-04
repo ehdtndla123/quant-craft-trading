@@ -1,19 +1,23 @@
 from pydantic import BaseModel
-from datetime import datetime
+from app.db.models import TradingBotStatus
 
 
 class TradingBotBase(BaseModel):
-    bot_id: int
+    name: str
+    dry_run: bool
+    cash: float
+    user_id: int
+    exchange_api_key_id: int
     strategy_id: int
 
 
 class TradingBotCreate(TradingBotBase):
+    status: TradingBotStatus
     pass
 
 
 class TradingBotResponse(TradingBotBase):
     id: int
-    created_at: datetime
 
     class Config:
         from_attributes = True

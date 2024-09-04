@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
-from app.db.models import TradingBot, TradingbotStatus
+from app.db.models import TradingBot, TradingBotStatus
 
 
 def create_trading_bot(db: Session, trading_bot_data: dict) -> TradingBot:
@@ -37,12 +37,11 @@ def delete_trading_bot(db: Session, trading_bot_id: int) -> bool:
 
 def get_trading_bot_with_relations(db: Session, trading_bot_id: int):
     return db.query(TradingBot).options(
-        joinedload(TradingBot.bot),
         joinedload(TradingBot.strategy)
     ).filter(TradingBot.id == trading_bot_id).first()
 
 
-def update_trading_bot_status(db: Session, trading_bot_id: int, status: TradingbotStatus):
+def update_trading_bot_status(db: Session, trading_bot_id: int, status: TradingBotStatus):
     trading_bot = get_trading_bot(db, trading_bot_id)
     if trading_bot:
         trading_bot.status = status
@@ -51,5 +50,5 @@ def update_trading_bot_status(db: Session, trading_bot_id: int, status: Tradingb
     return trading_bot
 
 
-def get_trading_bots_by_status(db: Session, status: TradingbotStatus, skip: int = 0, limit: int = 100):
+def get_trading_bots_by_status(db: Session, status: TradingBotStatus, skip: int = 0, limit: int = 100):
     return db.query(TradingBot).filter(TradingBot.status == status).offset(skip).limit(limit).all()
