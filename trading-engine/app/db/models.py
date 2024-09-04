@@ -1,7 +1,7 @@
-from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey, Boolean, Enum, Text
+from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey, Boolean, Enum, Text, BigInteger, DECIMAL, \
+    func
 from sqlalchemy.orm import relationship
 from app.db.database import Base
-import datetime
 import enum
 
 
@@ -21,23 +21,24 @@ class Backtesting(Base):
     total_trades = Column(Integer)
     trades = Column(Text)
     equity_curve = Column(Text)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     strategy_id = Column(Integer, ForeignKey("strategies.id"), index=True)
-    strategy = relationship("Strategy")
+    strategy = relationship("Strategy", back_populates="backtestings")
 
 
 class User(Base):
     __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(BigInteger, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    bots = relationship("Bot", back_populates="user")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    trading_bots = relationship("TradingBot", back_populates="user")
+    exchange_api_keys = relationship("ExchangeApiKey", back_populates="user")
 
 
 class Strategy(Base):
     __tablename__ = "strategies"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(BigInteger, primary_key=True, index=True)
     name = Column(String, index=True)
     description = Column(String)
     leverage = Column(Float)
@@ -46,29 +47,14 @@ class Strategy(Base):
     timeframe = Column(String)
     symbol = Column(String)
     exchange = Column(String)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     trading_bots = relationship("TradingBot", back_populates="strategy")
+    backtestings = relationship("Backtesting", back_populates="strategy")
 
 
-class Bot(Base):
-    __tablename__ = "bots"
-    id = Column(Integer, primary_key=True, index=True)
-    dry_run = Column(Boolean, default=True)
-    name = Column(String)
-    cash = Column(Float)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
-
-    user_id = Column(Integer, ForeignKey('users.id'))
-    user = relationship("User", back_populates="bots")
-
-    trading_bots = relationship("TradingBot", back_populates="bot")
-
-
-class TradingbotStatus(enum.Enum):
-    # 대기중
+class TradingBotStatus(enum.Enum):
     PENDING = "대기중"
     RUNNING = "실행중"
     STOPPING = "중지중"
@@ -77,11 +63,42 @@ class TradingbotStatus(enum.Enum):
 
 class TradingBot(Base):
     __tablename__ = "trading_bots"
-    id = Column(Integer, primary_key=True, index=True)
-    bot_id = Column(Integer, ForeignKey('bots.id'))
-    strategy_id = Column(Integer, ForeignKey('strategies.id'))
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    bot = relationship("Bot", back_populates="trading_bots")
+    id = Column(BigInteger, primary_key=True, index=True)
+    name = Column(String)
+    dry_run = Column(Boolean)
+    cash = Column(DECIMAL(precision=18, scale=8))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    status = Column(Enum(TradingBotStatus))
+
+    user_id = Column(BigInteger, ForeignKey('users.id'))
+    user = relationship("User", back_populates="trading_bots")
+
+    exchange_api_key_id = Column(BigInteger, ForeignKey('exchange_api_keys.id'))
+    exchange_api_key = relationship("ExchangeApiKey", back_populates="trading_bots")
+
+    strategy_id = Column(BigInteger, ForeignKey('strategies.id'))
     strategy = relationship("Strategy", back_populates="trading_bots")
-    status = Column(Enum(TradingbotStatus), default=TradingbotStatus.PENDING)
+
+    version = Column(BigInteger, nullable=False, default=1)
+
+    __mapper_args__ = {
+        'version_id_col': version
+    }
+
+
+class ExchangeApiKey(Base):
+    __tablename__ = "exchange_api_keys"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    exchange_name = Column(String)
+    api_key = Column(String)
+    secret_key = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user_id = Column(BigInteger, ForeignKey('users.id'))
+    user = relationship("User", back_populates="exchange_api_keys")
+
+    trading_bots = relationship("TradingBot", back_populates="exchange_api_key")
