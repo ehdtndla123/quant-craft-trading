@@ -1,5 +1,6 @@
 import os
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
+
 
 class Settings(BaseSettings):
     # 데이터베이스 설정
@@ -12,6 +13,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"  # .env 파일 경로 지정
+
 
 # 환경 변수 로드
 settings = Settings()
