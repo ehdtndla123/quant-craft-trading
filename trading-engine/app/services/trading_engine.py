@@ -10,14 +10,12 @@ from app.services.strategy_manager import StrategyManager
 class TradingEngine:
     def __init__(self, trading_bot: TradingBot):
         self.trading_bot = trading_bot
-        self.bot = trading_bot.bot
         self.db_strategy = trading_bot.strategy
         self.symbol = self.db_strategy.symbol
         self.timeframe = self.db_strategy.timeframe
         self.data = pd.DataFrame(columns=['Open', 'High', 'Low', 'Close', 'Volume'])
         self.is_running = False
         self.broker_service = BrokerService(
-            self.bot,
             self.trading_bot,
             self.symbol,
             self.db_strategy.exchange,

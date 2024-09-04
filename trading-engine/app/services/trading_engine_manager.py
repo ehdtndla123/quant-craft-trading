@@ -7,7 +7,7 @@ from typing import Dict, List
 from app.services.trading_engine import TradingEngine
 from app.services import trading_bot_service
 from app.db.database import SessionLocal
-from app.db.models import TradingbotStatus
+from app.db.models import TradingBotStatus
 
 
 def worker_process(worker_id: int, task_queue: Queue, result_queue: Queue):
@@ -45,7 +45,7 @@ async def async_worker(worker_id: int, task_queue: Queue, result_queue: Queue):
         elif action == "status":
             is_running = trading_bot_id in bot_processes and not bot_processes[trading_bot_id].done()
             result_queue.put(
-                ("status", trading_bot_id, TradingbotStatus.RUNNING if is_running else TradingbotStatus.STOPPED))
+                ("status", trading_bot_id, TradingBotStatus.RUNNING if is_running else TradingBotStatus.STOPPED))
         elif action == "get_engine_data":
             if trading_bot_id in bot_engines:
                 engine = bot_engines[trading_bot_id]
@@ -83,10 +83,10 @@ class TradingEngineManager:
         db = SessionLocal()
         try:
             trading_bot = trading_bot_service.get_trading_bot_with_relations(db, trading_bot_id)
-            if trading_bot and trading_bot.status == TradingbotStatus.PENDING:
+            if trading_bot and trading_bot.status == TradingBotStatus.PENDING:
                 worker_id = hash(trading_bot.id) % self.num_workers
                 self.task_queues[worker_id].put((trading_bot.id, "start", trading_bot))
-                trading_bot_service.update_trading_bot_status(db, trading_bot.id, TradingbotStatus.RUNNING)
+                trading_bot_service.update_trading_bot_status(db, trading_bot.id, TradingBotStatus.RUNNING)
                 self.bot_worker_map[trading_bot.id] = worker_id
         finally:
             db.close()
@@ -97,11 +97,11 @@ class TradingEngineManager:
             if trading_bot_id in self.bot_worker_map:
                 worker_id = self.bot_worker_map[trading_bot_id]
                 self.task_queues[worker_id].put((trading_bot_id, "stop", None))
-                trading_bot_service.update_trading_bot_status(db, trading_bot_id, TradingbotStatus.STOPPING)
+                trading_bot_service.update_trading_bot_status(db, trading_bot_id, TradingBotStatus.STOPPING)
         finally:
             db.close()
 
-    async def get_bot_status(self, trading_bot_id: int) -> TradingbotStatus:
+    async def get_bot_status(self, trading_bot_id: int) -> TradingBotStatus:
         db = SessionLocal()
         try:
             trading_bot = trading_bot_service.get_trading_bot(db, trading_bot_id)
@@ -118,9 +118,9 @@ class TradingEngineManager:
                     if action == "heartbeat":
                         self.worker_last_heartbeat[data] = time.time()
                     elif action == "started":
-                        trading_bot_service.update_trading_bot_status(db, bot_id, TradingbotStatus.RUNNING)
+                        trading_bot_service.update_trading_bot_status(db, bot_id, TradingBotStatus.RUNNING)
                     elif action == "stopped":
-                        trading_bot_service.update_trading_bot_status(db, bot_id, TradingbotStatus.STOPPED)
+                        trading_bot_service.update_trading_bot_status(db, bot_id, TradingBotStatus.STOPPED)
                         if bot_id in self.bot_worker_map:
                             del self.bot_worker_map[bot_id]
                 except queue.Empty:
@@ -149,7 +149,7 @@ class TradingEngineManager:
                              assigned_worker == worker_id]
             for bot_id in affected_bots:
                 trading_bot = trading_bot_service.get_trading_bot(db, bot_id)
-                if trading_bot and trading_bot.status == TradingbotStatus.RUNNING:
+                if trading_bot and trading_bot.status == TradingBotStatus.RUNNING:
                     self.task_queues[worker_id].put((bot_id, "start", trading_bot))
         finally:
             db.close()
@@ -164,7 +164,7 @@ class TradingEngineManager:
         while True:
             db = SessionLocal()
             try:
-                pending_bots = trading_bot_service.get_trading_bots_by_status(db, TradingbotStatus.PENDING)
+                pending_bots = trading_bot_service.get_trading_bots_by_status(db, TradingBotStatus.PENDING)
                 for bot in pending_bots:
                     await self.start_bot(bot.id)
             finally:
@@ -174,7 +174,7 @@ class TradingEngineManager:
     async def stop_all_bots(self):
         db = SessionLocal()
         try:
-            running_bots = trading_bot_service.get_trading_bots_by_status(db, TradingbotStatus.RUNNING)
+            running_bots = trading_bot_service.get_trading_bots_by_status(db, TradingBotStatus.RUNNING)
             for bot in running_bots:
                 await self.stop_bot(bot.id)
         finally:

@@ -4,7 +4,7 @@ from uuid import uuid4
 from kafka import KafkaProducer
 from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
-from app.db.models import Bot, TradingBot
+from app.db.models import TradingBot
 from app.model.broker_interface import IBroker
 from app.core.config import settings
 import logging
@@ -13,10 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 class BrokerService(IBroker):
-    def __init__(self, bot: Bot, trading_bot: TradingBot, symbol: str, exchange: str,
+    def __init__(self, trading_bot: TradingBot, symbol: str, exchange: str,
                  leverage: float, exclusive_orders: bool, hedge_mode: bool):
         self.db: Session = SessionLocal()
-        self._bot_id = bot.id
         self._trading_bot_id = trading_bot.id
         self._symbol = symbol
         self._exchange = exchange
@@ -44,7 +43,6 @@ class BrokerService(IBroker):
                            ) -> Dict[str, Any]:
         return {
             "order_id": order_id,
-            "bot_id": self._bot_id,
             "trading_bot_id": self._trading_bot_id,
             "symbol": self._symbol,
             "exchange": self._exchange,
