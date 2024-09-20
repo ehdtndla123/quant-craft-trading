@@ -1,6 +1,6 @@
 from .DRL.env.drl_backtesting import Strategy
 # from backtesting import Strategy
-from .DRL.settings import MODEL_STORE_INTERVAL, GRAPH_DRAW_INTERVAL, N_TRAIN, LONG, \
+from .DRL.settings import MODEL_STORE_INTERVAL, GRAPH_DRAW_INTERVAL, BATCH_SIZE, LONG, \
                         SHORT, CLOSE, HOLD, LIQUIFIED, DATA_DONE, DEMOCRATISATION, INDICATOR_NUM, \
                             MIN_START_POINT, MAX_START_POINT_FROM, PRINT_STATUS_INTERVAL
 
@@ -15,13 +15,14 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 
 class DRLStrategy(Strategy):
-    def init(self, agent, data_length):
+    def init(self, agent, data_length, interval=10):
         self.agent = agent
         self.is_training = True
+        self.interval = interval
 
         self.reward_sum = 0.0
         self.step = 0
-        self.action_history = [0, 0, 0, 0]
+        self.action_history = [0, 0, 0]
         self.current_balance = 0
         self.previous_balance = 0
         self.previous_state = None
@@ -34,9 +35,9 @@ class DRLStrategy(Strategy):
         self.is_episode_started = False
 
     def resample_and_align(self, freq, reference_index):
-        d = self.data.df
+        d = self.data.df.copy()
 
-        d.loc[:, 'datetime'] = (pd.to_datetime(d.loc[:, 'datetime']))
+        d['datetime'] = pd.to_datetime(d['datetime'])
         d.set_index('datetime', drop=True, inplace=True)
 
         resampled_data = d.resample(freq).agg({
@@ -47,7 +48,7 @@ class DRLStrategy(Strategy):
             'Volume': 'sum'
         }).dropna()
 
-        aligned_data = resampled_data.loc[resampled_data.index <= self.data.datetime[reference_index]].tail(self.agent.state_size)
+        aligned_data = resampled_data[resampled_data.index <= self.data.datetime[reference_index]].tail(self.agent.state_size)
         return aligned_data
 
     def get_state(self):
@@ -59,36 +60,19 @@ class DRLStrategy(Strategy):
 
         reference_index = -1
 
-        five_minute_data = self.resample_and_align('5min', reference_index)
-        five_minute_state = np.array([five_minute_data.Open,
-                                        five_minute_data.Close,
-                                        five_minute_data.High,
-                                        five_minute_data.Low,
-                                        five_minute_data.Volume])
+        frequencies = ['10min', '30min', '1h', '4h']
+        states = []
 
-        thirty_minute_data = self.resample_and_align('30min', reference_index)
-        thirty_minute_state = np.array([thirty_minute_data.Open,
-                                        thirty_minute_data.Close,
-                                        thirty_minute_data.High,
-                                        thirty_minute_data.Low,
-                                        thirty_minute_data.Volume])
+        for freq in frequencies:
+            resampled_data = self.resample_and_align(freq, reference_index)
+            states.append(np.array([resampled_data.Open,
+                                    resampled_data.Close,
+                                    resampled_data.High,
+                                    resampled_data.Low,
+                                    resampled_data.Volume]))
 
-        one_hour_data = self.resample_and_align('1h', reference_index)
-        one_hour_state = np.array([one_hour_data.Open,
-                                    one_hour_data.Close,
-                                    one_hour_data.High,
-                                    one_hour_data.Low,
-                                    one_hour_data.Volume])
-
-        four_hour_data = self.resample_and_align('4h', reference_index)
-        four_hour_state = np.array([four_hour_data.Open,
-                                    four_hour_data.Close,
-                                    four_hour_data.High,
-                                    four_hour_data.Low,
-                                    four_hour_data.Volume])
-
-
-        return np.concatenate((one_minute_data, five_minute_state, thirty_minute_state, one_hour_state, four_hour_state, np.array(self.previous_action).reshape(1, 300)), axis=0)
+        result = np.concatenate([one_minute_data] + states + [np.array(self.previous_action).reshape(1, 300)], axis=0)
+        return result
 
 
     def reward(self, current_action, is_liq):
@@ -107,7 +91,7 @@ class DRLStrategy(Strategy):
         # elif current_action == CLOSE or current_action == HOLD:
         #     rw -= 1
 
-        rw += (self.current_balance - self.previous_balance) * 10
+        rw += (self.current_balance - self.previous_balance)# * 10
 
         if is_liq:
             print("Liquifided!!")
@@ -118,17 +102,14 @@ class DRLStrategy(Strategy):
 
     def take_step(self, action):
         current_action = np.argmax(action)
-
         state = self.get_state()
 
         if self.previous_action[-1] == current_action:
-            self.action_history[HOLD] += 1
+            current_action = HOLD
         elif current_action == LONG:
             self.buy()
-            self.action_history[LONG] += 1
         elif current_action == SHORT:
             self.sell()
-            self.action_history[SHORT] += 1
 
         if self.equity <= 3:
             self.is_liquified = True
@@ -139,19 +120,27 @@ class DRLStrategy(Strategy):
 
 
     def next(self):
-        if len(self.data) < self.start_point:
+        if len(self.data) < self.start_point or self.step % self.interval == 0:
             return
         if not self.is_episode_started:
-            print(f'Episode starting from {self.data.datetime[-1]}')
+            print(f'Episode starting from {self.data.datetime[-1]}, Initial balance {self.equity}')
             self.is_episode_started = True
-        # print(f'step : {self.step}')
+
         state = torch.tensor(self.get_state()).detach().cpu().to(dtype=torch.float)
         self.previous_balance = self.current_balance
         self.current_balance = self.equity
-        action = self.agent.model.get_action(state, self.step, False)
+
+        # To train faster..
+        if self.step < BATCH_SIZE:
+            action = self.agent.model.get_action_random()
+        else:
+            action = self.agent.model.get_action(state, self.step, False)
         state, reward, current_action, is_episode_done = self.take_step(action)
+        # a = ['Long', 'Short', 'Hold']
+        # print(f'Current date time {self.data.datetime[-1]}, balance {self.current_balance}, Action {a[current_action]}')
+        
         del self.previous_action[0]
-        self.previous_action.append(current_action)
+        self.previous_action.append(np.argmax(action))
         state = torch.tensor(state).detach().cpu().to(dtype=torch.float)
         self.reward_sum += reward
         self.action_history[current_action] += 1
@@ -168,7 +157,7 @@ class DRLStrategy(Strategy):
         self.step += 1
 
         if self.step % PRINT_STATUS_INTERVAL == 0:
-            print(f'Current date time is {self.data.datetime[-1]}')
+            print(f'Current date time {self.data.datetime[-1]}, Current balance {self.current_balance}')
 
         if is_episode_done:
             self.finish_episode()
@@ -180,7 +169,7 @@ class DRLStrategy(Strategy):
         self.agent.total_step += self.step
 
         print(f"'ep: {self.agent.episode} balance: {final_balance} reward: {self.reward_sum:<6.2f}")
-        print(f"buy: {self.action_history[LONG]} sell: {self.action_history[SHORT]} close:{self.action_history[CLOSE]} hold: {self.action_history[HOLD]}")
+        print(f"buy: {self.action_history[LONG]} sell: {self.action_history[SHORT]} hold: {self.action_history[HOLD]}")
         print(f"steps: {self.step:<6} steps_total: {self.agent.total_step:<7}time: {duration:<6.2f}\n")
 
         if (not self.is_training):

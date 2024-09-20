@@ -24,7 +24,7 @@ BacktestManager.run_backtest(
     cash=100000,
     exclusive_orders=True,
     # margin=0.2
-    margin=0.008
+    margin=0.0125
 )
 
 # bt.plot(

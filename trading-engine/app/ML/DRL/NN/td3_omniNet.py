@@ -203,7 +203,7 @@ class TD3(OffPolicyAgent):
         return action.detach().cpu().data.numpy().tolist()
 
     def get_action_random(self):
-        return [np.clip(np.random.uniform(0, 1.0), -1.0, 1.0), np.clip(np.random.uniform(-1.0, 1.0), -1.0, 1.0)]
+        return [np.clip(np.random.uniform(0.0, 1.0), -1.0, 1.0), np.clip(np.random.uniform(0.0, 1.0), -1.0, 1.0)]
 
 
     def train(self, state, action, reward, state_next, done):
