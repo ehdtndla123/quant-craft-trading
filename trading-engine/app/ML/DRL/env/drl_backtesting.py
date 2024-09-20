@@ -17,7 +17,6 @@ from itertools import repeat, product, chain, compress
 from math import copysign
 from numbers import Number
 from typing import Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
-import pprint
 
 import numpy as np
 import pandas as pd
@@ -868,7 +867,6 @@ class _Broker:
                 # Not enough cash/margin even for a single unit
                 if not size:
                     self.orders.remove(order)
-                    print("DEBUG 0")
                     raise _OutOfMoneyError
             assert size == round(size)
             need_size = int(size)
@@ -1170,7 +1168,6 @@ class Backtest:
                 try:
                     broker.next()
                 except _OutOfMoneyError:
-                    # print("DEBUG : Liquifided!!")
                     for trade in broker.trades:
                         trade.close()
                     liquified(strategy)
@@ -1202,13 +1199,6 @@ class Backtest:
                 risk_free_rate=0.0,
                 strategy_instance=strategy,
             )
-                # episode += 1
-                # if episode % (MODEL_STORE_INTERVAL//5) == 0 or episode == 1:
-                #     pprint.pprint(self._results)
-                #     print(episode)
-                #     self.plot()
-
-                # broker = self._broker(data=data)
 
         return self._results
 

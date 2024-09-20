@@ -80,19 +80,6 @@ class DRLStrategy(Strategy):
     def reward(self, current_action, is_liq):
         rw = 0
 
-        # if current_action == LONG:
-        #     if self.previous_action[-1] == current_action:
-        #         rw -= 5
-        #     else:
-        #         rw += 10
-        # elif current_action == SHORT:
-        #     if self.previous_action[-1] == current_action:
-        #         rw -= 5
-        #     else:
-        #         rw += 10
-        # elif current_action == CLOSE or current_action == HOLD:
-        #     rw -= 1
-
         if current_action == self.previous_action[-1]:
             rw -= 1
 
@@ -162,7 +149,6 @@ class DRLStrategy(Strategy):
         if self.step % (PRINT_STATUS_INTERVAL * self.interval) == 0:
             print(f'Current date time {self.data.datetime[-1]}, Current balance {self.current_balance}')
 
-        # print(self.is_liquified, is_episode_done)
 
         if is_episode_done:
             self.finish_episode()

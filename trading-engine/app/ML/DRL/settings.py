@@ -33,7 +33,6 @@ def trade_done(env_self):
 
 def liquified(env_self):
     env_self.is_liquified = True
-    # print("DEBUG : Liquifided!!")
     env_self.reward_sum += DEMOCRATISATION
     env_self.train_model(DEMOCRATISATION, True)
     env_self.finish_episode()
