@@ -20,3 +20,5 @@ DRLStrategy.html
 
 # .DS_Store for macOS
 .DS_Store
+# env file
+./app/.env
