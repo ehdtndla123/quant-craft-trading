@@ -65,7 +65,7 @@ class BacktestManager:
             episode += 1
             if episode % (MODEL_STORE_INTERVAL) == 0 or episode == 1:
                 pprint.pprint(stats)
-                print(episode)
+                # print(episode)
                 bt.plot()
         # except KeyboardInterrupt:
         #     return stats

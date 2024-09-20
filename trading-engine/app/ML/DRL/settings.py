@@ -29,9 +29,13 @@ MAX_START_POINT_FROM = 30 * 24 * 60
 
 def trade_done(env_self):
     env_self.is_data_done = True
+    env_self.finish_episode()
 
 def liquified(env_self):
     env_self.is_liquified = True
+    # print("DEBUG : Liquifided!!")
+    env_self.reward_sum += DEMOCRATISATION
+    env_self.train_model(DEMOCRATISATION, True)
     env_self.finish_episode()
 
 def get_device():

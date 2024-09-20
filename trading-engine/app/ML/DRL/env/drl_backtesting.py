@@ -868,6 +868,7 @@ class _Broker:
                 # Not enough cash/margin even for a single unit
                 if not size:
                     self.orders.remove(order)
+                    print("DEBUG 0")
                     raise _OutOfMoneyError
             assert size == round(size)
             need_size = int(size)
