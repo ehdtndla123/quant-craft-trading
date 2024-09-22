@@ -5,7 +5,7 @@ import importlib
 from app.services.data_loader_service import DataLoaderService as DataLoader
 
 
-from .DRL.NN.td3_omniNet import TD3
+from .DRL.NN.td3_xLSTM import TD3
 from .DRL.replaybuffer import ReplayBuffer
 from .DRL.storagemanager import StorageManager
 from .DRL.graph import Graph
