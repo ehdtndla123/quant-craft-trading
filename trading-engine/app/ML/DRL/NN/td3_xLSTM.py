@@ -28,7 +28,7 @@ class Actor(Network):
         x_example = torch.zeros(BATCH_SIZE, INDICATOR_NUM, state_size).to(device=get_device())
         factor = 2
         depth = 4
-        layer_num = 10
+        layer_num = 1
         layers = ('m'*7 + 's') * layer_num
         # layers = 'ms'
         self.xlstm = xLSTM(layers, x_example, factor=factor, depth=depth)

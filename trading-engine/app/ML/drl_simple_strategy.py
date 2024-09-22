@@ -164,11 +164,11 @@ class DRLStrategy(Strategy):
         self.agent.episode += 1
         duration = time.perf_counter() - self.episode_start
         final_balance = self.equity
-        self.agent.total_step += (self.step / self.interval)
+        self.agent.total_step += (self.step // self.interval)
 
         print(f"ep: {self.agent.episode} balance: {final_balance} reward: {self.reward_sum:<6.2f}")
         print(f"buy: {self.action_history[LONG]} sell: {self.action_history[SHORT]} hold: {self.action_history[HOLD]}")
-        print(f"steps: {self.step / self.interval:<6} steps_total: {self.agent.total_step:<7}time: {duration:<6.2f}\n")
+        print(f"steps: {self.step // self.interval:<6} steps_total: {self.agent.total_step:<7}time: {duration:<6.2f}\n")
 
         if (not self.is_training):
             self.agent.logger.update_test_results(self.step, final_balance if self.is_liquified else "Liquifieded", duration)
