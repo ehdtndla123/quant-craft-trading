@@ -57,7 +57,12 @@ class GenericExchangeMarketData(BaseCollector):
                     'exchange': self.exchange_name,
                     'symbol': self.symbol,
                     'type': 'ohlcv',
-                    'data': ohlcv
+                    'timestamp': ohlcv[0][0],
+                    'open': ohlcv[0][1],
+                    'high': ohlcv[0][2],
+                    'low': ohlcv[0][3],
+                    'close': ohlcv[0][4],
+                    'volume': ohlcv[0][5]
                 }
                 self.producer.send(self.topic['ohlcv'], data)
             except Exception as e:
