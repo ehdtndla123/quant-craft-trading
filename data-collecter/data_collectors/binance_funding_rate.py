@@ -1,24 +1,13 @@
-import asyncio
-import aiohttp
-import ssl
-import certifi
-from .base_collector import BaseCollector
+from .base_collector import RESTAPICollector
+from influxdb_client import Point, WritePrecision
 
-class BinanceFundingRate(BaseCollector):
-    def __init__(self, symbol, producer, topic):
-        super().__init__(symbol, producer, topic)
+
+class BinanceFundingRate(RESTAPICollector):
+    def __init__(self, symbol, kafka_bootstrap_servers, topic, db_manager):
+        super().__init__(symbol, kafka_bootstrap_servers, topic, db_manager)
         self.base_url = "https://fapi.binance.com"
-        self.is_running = True
-        self.session = None
 
-    async def create_session(self):
-        ssl_context = ssl.create_default_context(cafile=certifi.where())
-        self.session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context))
-
-    async def fetch_funding_rate(self):
-        if not self.session:
-            await self.create_session()
-
+    async def fetch_data(self):
         endpoint = f"{self.base_url}/fapi/v1/fundingRate"
         params = {
             "symbol": self.symbol.replace("/", ""),
@@ -28,27 +17,22 @@ class BinanceFundingRate(BaseCollector):
             data = await response.json()
             return data[0] if isinstance(data, list) and data else None
 
-    async def start(self):
-        print(f"Starting Binance funding rate collector for {self.symbol}")
-        try:
-            while self.is_running:
-                try:
-                    data = await self.fetch_funding_rate()
-                    if data:
-                        self.producer.send(self.topic, {
-                            'exchange': 'binance',
-                            'symbol': self.symbol,
-                            'type': 'funding_rate',
-                            'data': data
-                        })
-                except Exception as e:
-                    print(f"Error fetching funding rate for {self.symbol}: {e}")
-                await asyncio.sleep(300)  # 5 minutes
-        finally:
-            if self.session:
-                await self.session.close()
+    async def process_data(self, data):
+        kafka_data = {
+            'exchange': 'binance',
+            'symbol': self.symbol,
+            'type': 'funding_rate',
+            'data': data
+        }
+        await self.send_to_kafka(kafka_data)
 
-    async def stop(self):
-        self.is_running = False
-        if self.session:
-            await self.session.close()
+        point = Point("funding_rate") \
+            .tag("exchange", "binance") \
+            .tag("symbol", self.symbol) \
+            .field("funding_rate", float(data['fundingRate'])) \
+            .time(int(data['fundingTime']), WritePrecision.MS)
+
+        await self.store_to_influxdb(point)
+
+    def get_interval(self):
+        return 300

@@ -2,12 +2,18 @@ kafka:
   bootstrap_servers:
     - "localhost:9092"
   topics:
-    trade: "trades"
-    orderbook: "orderbook"
-    ohlcv: "ohlcv"
+    trade: "market.info"
+    orderbook: "market.info"
+    ohlcv: "market.ohlcv"
     liquidation: "market.info"
     open_interest: "market.info"
     funding_rate: "market.info"
+
+influxdb:
+  url: "http://localhost:8086"
+  token: "my-secret-token"
+  org: "my-org"
+  bucket: "test-bucket"
 
 exchanges:
   - name: "binance"
@@ -21,10 +27,10 @@ exchanges:
       - "liquidation"
       - "open_interest"
       - "funding_rate"
-#  - name: "bitmex"
-#    symbols:
-#      - "BTC/USD"
-#      - "ETH/USD"
-#    data_types:
+  - name: "okx"
+    symbols:
+      - "BTC"
+    data_types:
+      - "liquidation"
 #      - "trade"
 #      - "orderbook"
