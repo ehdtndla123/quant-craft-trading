@@ -1,0 +1,56 @@
+name: Python application
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      KAFKA_BOOTSTRAP_SERVERS: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
+      KAFKA_ORDERS_TOPIC: ${{ secrets.KAFKA_ORDERS_TOPIC }}
+      USE_SSH_TUNNEL: ${{ secrets.USE_SSH_TUNNEL }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_USERNAME: ${{ secrets.DB_USERNAME }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_ECHO: ${{ secrets.DB_ECHO }}
+      DB_POOL_SIZE: ${{ secrets.DB_POOL_SIZE }}
+      DB_MAX_OVERFLOW: ${{ secrets.DB_MAX_OVERFLOW }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.9"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Install SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        # known_hosts: ${{ secrets.KNOWN_HOSTS }}
+    
+    - name: Create SSH key file
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+    
+    - name: Run deployment script
+      env:
+        SSH_KEY_PATH: ~/.ssh/id_rsa
+      run: |
+        python main.py
