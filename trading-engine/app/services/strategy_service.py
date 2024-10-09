@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 
 def create_strategy(db: Session, strategy_data: StrategyCreate):
-    return strategy_repository.create_strategy(db, strategy_data.dict())
+    return strategy_repository.create_strategy(db, strategy_data)
 
 
 def get_strategy(db: Session, strategy_id: int):
@@ -16,7 +16,7 @@ def get_strategies(db: Session, skip: int = 0, limit: int = 100):
 
 
 def update_strategy(db: Session, strategy_id: int, strategy_data: StrategyUpdate):
-    return strategy_repository.update_strategy(db, strategy_id, strategy_data.dict())
+    return strategy_repository.update_strategy(db, strategy_id, strategy_data)
 
 
 def delete_strategy(db: Session, strategy_id: int):

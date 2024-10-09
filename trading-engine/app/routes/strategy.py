@@ -1,41 +1,33 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.database import get_db
-from app.schemas.strategy import StrategyCreate, StrategyUpdate, StrategyResponse
-from app.services import strategy_service
+from app.schemas.trading_bot import TradingBotCreate, TradingBotResponse
+from app.services import trading_bot_service
 
 router = APIRouter()
 
 
-@router.post("/strategies", response_model=StrategyResponse)
-def create_strategy(strategy_data: StrategyCreate, db: Session = Depends(get_db)):
-    return strategy_service.create_strategy(db, strategy_data)
+@router.post("/trading-bots", response_model=TradingBotResponse)
+def create_trading_bot(trading_bot_data: TradingBotCreate, db: Session = Depends(get_db)):
+    return trading_bot_service.create_trading_bot(db, trading_bot_data)
 
 
-@router.get("/strategies/{strategy_id}", response_model=StrategyResponse)
-def read_strategy(strategy_id: int, db: Session = Depends(get_db)):
-    strategy = strategy_service.get_strategy(db, strategy_id)
-    if strategy is None:
-        raise HTTPException(status_code=404, detail="Strategy not found")
-    return strategy
+@router.get("/trading-bots/{trading_bot_id}", response_model=TradingBotResponse)
+def read_trading_bot(trading_bot_id: int, db: Session = Depends(get_db)):
+    trading_bot = trading_bot_service.get_trading_bot(db, trading_bot_id)
+    if trading_bot is None:
+        raise HTTPException(status_code=404, detail="TradingBot not found")
+    return trading_bot
 
 
-@router.get("/strategies", response_model=list[StrategyResponse])
-def read_strategies(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return strategy_service.get_strategies(db, skip=skip, limit=limit)
+@router.get("/trading-bots", response_model=list[TradingBotResponse])
+def read_trading_bots(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return trading_bot_service.get_trading_bots(db, skip=skip, limit=limit)
 
 
-@router.put("/strategies/{strategy_id}", response_model=StrategyResponse)
-def update_strategy(strategy_id: int, strategy_data: StrategyUpdate, db: Session = Depends(get_db)):
-    updated_strategy = strategy_service.update_strategy(db, strategy_id, strategy_data)
-    if updated_strategy is None:
-        raise HTTPException(status_code=404, detail="Strategy not found")
-    return updated_strategy
-
-
-@router.delete("/strategies/{strategy_id}", response_model=bool)
-def delete_strategy(strategy_id: int, db: Session = Depends(get_db)):
-    result = strategy_service.delete_strategy(db, strategy_id)
+@router.delete("/trading-bots/{trading_bot_id}", response_model=bool)
+def delete_trading_bot(trading_bot_id: int, db: Session = Depends(get_db)):
+    result = trading_bot_service.delete_trading_bot(db, trading_bot_id)
     if not result:
-        raise HTTPException(status_code=404, detail="Strategy not found")
+        raise HTTPException(status_code=404, detail="TradingBot not found")
     return result

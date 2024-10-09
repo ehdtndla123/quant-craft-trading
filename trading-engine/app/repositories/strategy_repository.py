@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Session
 from app.db.models import Strategy
+from app.schemas.strategy import StrategyCreate, StrategyUpdate
 
 
-def create_strategy(db: Session, strategy_data: dict) -> Strategy:
-    new_strategy = Strategy(**strategy_data)
+def create_strategy(db: Session, strategy_data: StrategyCreate) -> Strategy:
+    new_strategy = Strategy(**strategy_data.dict())
     db.add(new_strategy)
     db.commit()
     db.refresh(new_strategy)
@@ -18,10 +19,11 @@ def get_strategies(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Strategy).offset(skip).limit(limit).all()
 
 
-def update_strategy(db: Session, strategy_id: int, strategy_data: dict) -> Strategy:
+def update_strategy(db: Session, strategy_id: int, strategy_data: StrategyUpdate) -> Strategy:
     db_strategy = get_strategy(db, strategy_id)
     if db_strategy:
-        for key, value in strategy_data.items():
+        update_data = strategy_data.dict(exclude_unset=True)
+        for key, value in update_data.items():
             setattr(db_strategy, key, value)
         db.commit()
         db.refresh(db_strategy)
