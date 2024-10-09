@@ -32,9 +32,9 @@ jobs:
         key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
         envs: KAFKA_BOOTSTRAP_SERVERS,KAFKA_ORDERS_TOPIC,USE_SSH_TUNNEL,DB_HOST,DB_PORT,DB_USERNAME,DB_PASSWORD,DB_NAME,DB_ECHO,DB_POOL_SIZE,DB_MAX_OVERFLOW,SSH_HOST,SSH_PORT,SSH_USERNAME,PROJECT_SSH_KEY
         script: |
-          cd /path/to/your/project
+          cd ~/quant-craft
           git pull origin main
-          
+          cd quant-craft-trading/trading-engine
           # Install requirements
           pip install -r requirements.txt
           
