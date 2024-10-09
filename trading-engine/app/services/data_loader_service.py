@@ -8,6 +8,9 @@ class DataLoaderService:
     @staticmethod
     def load_data_from_ccxt(exchange_name: str, symbol: str, timeframe: str, start_time: str, end_time: str,
                             timezone: str = "UTC") -> pd.DataFrame:
+        if exchange_name == 'simulated':
+            exchange_name = 'binance'
+
         exchange = getattr(ccxt, exchange_name)()
 
         start_timestamp = int(pd.Timestamp(start_time, tz='UTC').timestamp() * 1000)

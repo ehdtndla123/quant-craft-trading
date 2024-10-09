@@ -1,15 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import trading_bot, strategy, backtesting, example_generator
-from app.db.database import initialize_database
+from app.db.database import initialize_database, tunnel
 from app.services.trading_engine_manager import trading_engine_manager
 from admin import setup_admin
+from app.db.database_manager import db_manager
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000","https://quant-craft.site"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,5 +40,7 @@ async def shutdown_event():
 
 if __name__ == "__main__":
     import uvicorn
+    import atexit
 
+    atexit.register(db_manager.stop_tunnel)
     uvicorn.run(app, host="0.0.0.0", port=8000)

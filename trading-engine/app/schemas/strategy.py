@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
 
 
 class StrategyBase(BaseModel):
@@ -24,7 +25,7 @@ class StrategyUpdate(StrategyBase):
 class StrategyResponse(StrategyBase):
     id: int
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
