@@ -34,7 +34,7 @@ jobs:
         script: |
           cd ~/quant-craft
           git pull origin main
-          cd quant-craft-trading/trading-engine
+          cd trading-engine
           # Install requirements
           pip install -r requirements.txt
           
