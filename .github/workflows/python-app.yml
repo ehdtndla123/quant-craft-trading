@@ -1,56 +1,65 @@
-name: Python application
+name: Deploy Python Application
 
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-permissions:
-  contents: read
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-    env:
-      KAFKA_BOOTSTRAP_SERVERS: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
-      KAFKA_ORDERS_TOPIC: ${{ secrets.KAFKA_ORDERS_TOPIC }}
-      USE_SSH_TUNNEL: 'true'
-      DB_HOST: ${{ secrets.DB_HOST }}
-      DB_PORT: ${{ secrets.DB_PORT }}
-      DB_USERNAME: ${{ secrets.DB_USERNAME }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      DB_NAME: ${{ secrets.DB_NAME }}
-      DB_ECHO: ${{ secrets.DB_ECHO }}
-      DB_POOL_SIZE: ${{ secrets.DB_POOL_SIZE }}
-      DB_MAX_OVERFLOW: ${{ secrets.DB_MAX_OVERFLOW }}
-      SSH_HOST: ${{ secrets.SSH_HOST }}
-      SSH_PORT: ${{ secrets.SSH_PORT }}
-      SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.9"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Install SSH Key
-      uses: shimataro/ssh-key-action@v2
-      with:
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        # known_hosts: ${{ secrets.KNOWN_HOSTS }}
-    
-    - name: Create SSH key file
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-    
-    - name: Run deployment script
+    - name: Deploy to production
+      uses: appleboy/ssh-action@master
       env:
-        SSH_KEY_PATH: ~/.ssh/id_rsa
-      run: |
-        python main.py
+        KAFKA_BOOTSTRAP_SERVERS: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
+        KAFKA_ORDERS_TOPIC: ${{ secrets.KAFKA_ORDERS_TOPIC }}
+        USE_SSH_TUNNEL: 'TRUE'
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_PORT: ${{ secrets.DB_PORT }}
+        DB_USERNAME: ${{ secrets.DB_USERNAME }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_ECHO: ${{ secrets.DB_ECHO }}
+        DB_POOL_SIZE: ${{ secrets.DB_POOL_SIZE }}
+        DB_MAX_OVERFLOW: ${{ secrets.DB_MAX_OVERFLOW }}
+        TUNNEL_SSH_HOST: ${{ secrets.SSH_HOST }}
+        TUNNEL_SSH_PORT: ${{ secrets.SSH_PORT }}
+        TUNNEL_SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+        PROJECT_SSH_KEY: ${{ secrets.PROJECT_SSH_KEY }}
+      with:
+        host: ${{ secrets.DEPLOY_SSH_HOST }}
+        username: ${{ secrets.DEPLOY_SSH_USERNAME }}
+        key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+        envs: KAFKA_BOOTSTRAP_SERVERS,KAFKA_ORDERS_TOPIC,USE_SSH_TUNNEL,DB_HOST,DB_PORT,DB_USERNAME,DB_PASSWORD,DB_NAME,DB_ECHO,DB_POOL_SIZE,DB_MAX_OVERFLOW,SSH_HOST,SSH_PORT,SSH_USERNAME,PROJECT_SSH_KEY
+        script: |
+          cd /path/to/your/project
+          git pull origin main
+          
+          # Install requirements
+          pip install -r requirements.txt
+          
+          # Create .env file
+          cat > .env << EOL
+          KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+          KAFKA_ORDERS_TOPIC=${KAFKA_ORDERS_TOPIC}
+          USE_SSH_TUNNEL=${USE_SSH_TUNNEL}
+          DB_HOST=${DB_HOST}
+          DB_PORT=${DB_PORT}
+          DB_USERNAME=${DB_USERNAME}
+          DB_PASSWORD=${DB_PASSWORD}
+          DB_NAME=${DB_NAME}
+          DB_ECHO=${DB_ECHO}
+          DB_POOL_SIZE=${DB_POOL_SIZE}
+          DB_MAX_OVERFLOW=${DB_MAX_OVERFLOW}
+          SSH_HOST=${SSH_HOST}
+          SSH_PORT=${SSH_PORT}
+          SSH_USERNAME=${SSH_USERNAME}
+          SSH_KEY_PATH=/home/${{ secrets.SSH_USERNAME }}/.ssh/project_ssh_key
+          EOL
+          
+          # Set up SSH key for tunneling
+          echo "${SSH_SECRET_KEY}" > /home/${{ secrets.SSH_USERNAME }}/.ssh/project_ssh_key
+          chmod 600 /home/${{ secrets.SSH_USERNAME }}/.ssh/project_ssh_key
+          
+          pkill -f main.py
+          nohup python main.py > app.log 2>&1 &
