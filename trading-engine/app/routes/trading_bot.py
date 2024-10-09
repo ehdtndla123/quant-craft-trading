@@ -31,3 +31,10 @@ def delete_trading_bot(trading_bot_id: int, db: Session = Depends(get_db)):
     if not result:
         raise HTTPException(status_code=404, detail="TradingBot not found")
     return result
+
+@router.get("/users/{user_id}/trading-bots", response_model=list[TradingBotResponse])
+def read_user_trading_bots(user_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    trading_bots = trading_bot_service.get_trading_bots_by_user(db, user_id, skip=skip, limit=limit)
+    if not trading_bots:
+        raise HTTPException(status_code=404, detail="No trading bots found for this user")
+    return trading_bots

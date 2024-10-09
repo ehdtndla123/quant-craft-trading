@@ -20,6 +20,10 @@ def get_trading_bots_by_strategy(db: Session, strategy_id: int):
     return trading_bot_repository.get_trading_bots_by_strategy(db, strategy_id)
 
 
+def get_trading_bots_by_user(db: Session, user_id: int, skip: int = 0, limit: int = 100):
+    return trading_bot_repository.get_trading_bots_by_user(db, user_id, skip=skip, limit=limit)
+
+
 def delete_trading_bot(db: Session, trading_bot_id: int):
     return trading_bot_repository.delete_trading_bot(db, trading_bot_id)
 

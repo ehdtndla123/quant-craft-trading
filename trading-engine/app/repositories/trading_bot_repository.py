@@ -14,6 +14,10 @@ def get_trading_bot(db: Session, trading_bot_id: int) -> TradingBot:
     return db.query(TradingBot).filter(TradingBot.id == trading_bot_id).first()
 
 
+def get_trading_bots_by_user(db: Session, user_id: int, skip: int = 0, limit: int = 100):
+    return db.query(TradingBot).filter(TradingBot.user_id == user_id).offset(skip).limit(limit).all()
+
+
 def get_trading_bots(db: Session, skip: int = 0, limit: int = 100):
     return db.query(TradingBot).offset(skip).limit(limit).all()
 
