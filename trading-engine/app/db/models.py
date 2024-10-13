@@ -92,7 +92,7 @@ class ExchangeApiKey(Base):
     __tablename__ = "exchange_api_keys"
 
     id = Column(BigInteger, primary_key=True, index=True)
-    exchange_name = Column(String)
+    exchange_type = Column(String)
     api_key = Column(String)
     secret_key = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
