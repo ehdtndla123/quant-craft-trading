@@ -33,8 +33,6 @@ huggingface-hub==0.24.5
 idna==3.7
 Jinja2==3.1.4
 kafka-python==2.0.2
-lightning==2.2.4
-lightning-utilities==0.11.6
 markdown-it-py==3.0.0
 MarkupSafe==2.1.5
 mdurl==0.1.2
@@ -57,7 +55,6 @@ PyNaCl==1.5.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 python-multipart==0.0.9
-pytorch-lightning==2.4.0
 pytz==2024.1
 PyYAML==6.0.1
 regex==2024.7.24
@@ -73,9 +70,6 @@ sshtunnel==0.4.0
 starlette==0.37.2
 sympy==1.13.2
 tokenizers==0.19.1
-torchaudio==2.2.2
-torchmetrics==1.4.1
-torchvision==0.17.2
 tornado==6.4.1
 tqdm==4.66.5
 transformers==4.40.2
