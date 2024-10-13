@@ -1,0 +1,65 @@
+name: Deploy Python Application
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy to production
+      uses: appleboy/ssh-action@master
+      env:
+        KAFKA_BOOTSTRAP_SERVERS: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
+        KAFKA_ORDERS_TOPIC: ${{ secrets.KAFKA_ORDERS_TOPIC }}
+        USE_SSH_TUNNEL: 'TRUE'
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_PORT: ${{ secrets.DB_PORT }}
+        DB_USERNAME: ${{ secrets.DB_USERNAME }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_ECHO: ${{ secrets.DB_ECHO }}
+        DB_POOL_SIZE: ${{ secrets.DB_POOL_SIZE }}
+        DB_MAX_OVERFLOW: ${{ secrets.DB_MAX_OVERFLOW }}
+        TUNNEL_SSH_HOST: ${{ secrets.SSH_HOST }}
+        TUNNEL_SSH_PORT: ${{ secrets.SSH_PORT }}
+        TUNNEL_SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+        PROJECT_SSH_KEY: ${{ secrets.PROJECT_SSH_KEY }}
+      with:
+        host: ${{ secrets.DEPLOY_SSH_HOST }}
+        username: ${{ secrets.DEPLOY_SSH_USERNAME }}
+        key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+        envs: KAFKA_BOOTSTRAP_SERVERS,KAFKA_ORDERS_TOPIC,USE_SSH_TUNNEL,DB_HOST,DB_PORT,DB_USERNAME,DB_PASSWORD,DB_NAME,DB_ECHO,DB_POOL_SIZE,DB_MAX_OVERFLOW,SSH_HOST,SSH_PORT,SSH_USERNAME,PROJECT_SSH_KEY
+        script: |
+          cd ~/quant-craft-trading
+          git pull origin main
+          cd trading-engine
+          # Install requirements
+          pip install -r requirements.txt
+          
+          # Create .env file
+          cat > .env << EOL
+          KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+          KAFKA_ORDERS_TOPIC=${KAFKA_ORDERS_TOPIC}
+          USE_SSH_TUNNEL=${USE_SSH_TUNNEL}
+          DB_HOST=${DB_HOST}
+          DB_PORT=${DB_PORT}
+          DB_USERNAME=${DB_USERNAME}
+          DB_PASSWORD=${DB_PASSWORD}
+          DB_NAME=${DB_NAME}
+          DB_ECHO=${DB_ECHO}
+          DB_POOL_SIZE=${DB_POOL_SIZE}
+          DB_MAX_OVERFLOW=${DB_MAX_OVERFLOW}
+          SSH_HOST=${SSH_HOST}
+          SSH_PORT=${SSH_PORT}
+          SSH_USERNAME=${SSH_USERNAME}
+          SSH_KEY_PATH=/home/${{ secrets.SSH_USERNAME }}/.ssh/project_ssh_key
+          EOL
+          
+          # Set up SSH key for tunneling
+          echo "${SSH_SECRET_KEY}" > /home/${{ secrets.SSH_USERNAME }}/.ssh/project_ssh_key
+          chmod 600 /home/${{ secrets.SSH_USERNAME }}/.ssh/project_ssh_key
+          
+          pkill -f main.py
+          nohup python main.py > app.log 2>&1 &
