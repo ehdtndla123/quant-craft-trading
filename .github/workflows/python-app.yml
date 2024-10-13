@@ -36,7 +36,7 @@ jobs:
           git pull origin main
           cd trading-engine
           # Install requirements
-          pip install -r requirements.txt
+          # pip install -r requirements.txt
           
           # Create .env file
           cat > .env << EOL
