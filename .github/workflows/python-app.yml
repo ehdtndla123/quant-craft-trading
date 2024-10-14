@@ -40,6 +40,7 @@ jobs:
           # pip install -r requirements.txt
           
           # Create .env file
+          echo "Creating .env file..."
           cat > .env << EOL
           KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
           KAFKA_ORDERS_TOPIC=${KAFKA_ORDERS_TOPIC}
@@ -62,6 +63,5 @@ jobs:
           echo "${SSH_SECRET_KEY}" > /home/${{ secrets.SSH_USERNAME }}/.ssh/project_ssh_key
           chmod 600 /home/${{ secrets.SSH_USERNAME }}/.ssh/project_ssh_key
 
-          cd app
-          pkill -f main.py
+          # pkill -f main.py
           nohup python main.py > app.log 2>&1 &
