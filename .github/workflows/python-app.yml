@@ -31,7 +31,7 @@ jobs:
         host: ${{ secrets.DEPLOY_SSH_HOST }}
         username: ${{ secrets.DEPLOY_SSH_USERNAME }}
         key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
-        envs: KAFKA_BOOTSTRAP_SERVERS,KAFKA_ORDERS_TOPIC,USE_SSH_TUNNEL,DB_HOST,DB_PORT,DB_USERNAME,DB_PASSWORD,DB_NAME,DB_ECHO,DB_POOL_SIZE,DB_MAX_OVERFLOW,SSH_HOST,SSH_PORT,SSH_USERNAME,PROJECT_SSH_KEY
+        envs: KAFKA_BOOTSTRAP_SERVERS,KAFKA_ORDERS_TOPIC,USE_SSH_TUNNEL,DB_HOST,DB_PORT,DB_USERNAME,DB_PASSWORD,DB_NAME,DB_ECHO,DB_POOL_SIZE,DB_MAX_OVERFLOW,TUNNEL_SSH_HOST,TUNNEL_SSH_PORT,TUNNEL_SSH_USERNAME,PROJECT_SSH_KEY
         script: |
           cd ~/quant-craft-trading
           git pull origin main
@@ -56,12 +56,12 @@ jobs:
           SSH_HOST=${TUNNEL_SSH_HOST}
           SSH_PORT=${TUNNEL_SSH_PORT}
           SSH_USERNAME=${TUNNEL_SSH_USERNAME}
-          SSH_KEY_PATH=/home/${{ secrets.SSH_USERNAME }}/.ssh/project_ssh_key
+          SSH_KEY_PATH=/home/${{ secrets.DEPLOY_SSH_USERNAME }}/.ssh/project_ssh_key
           EOL
           
           # Set up SSH key for tunneling
-          echo "${SSH_SECRET_KEY}" > /home/${{ secrets.SSH_USERNAME }}/.ssh/project_ssh_key
-          chmod 600 /home/${{ secrets.SSH_USERNAME }}/.ssh/project_ssh_key
+          echo "${PROJECT_SSH_KEY}" > /home/${{ secrets.DEPLOY_SSH_USERNAME }}/.ssh/project_ssh_key
+          chmod 600 /home/${{ secrets.DEPLOY_SSH_USERNAME }}/.ssh/project_ssh_key
 
           # pkill -f main.py
           
