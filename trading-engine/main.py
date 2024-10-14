@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes import trading_bot, strategy, backtesting, example_generator
 from app.db.database import initialize_database, tunnel
 from app.services.trading_engine_manager import trading_engine_manager
-from admin import setup_admin
+from app.admin import setup_admin
 from app.db.database_manager import db_manager
 
 app = FastAPI()
