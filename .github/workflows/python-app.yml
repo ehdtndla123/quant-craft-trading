@@ -20,9 +20,9 @@ jobs:
         DB_USERNAME: ${{ secrets.DB_USERNAME }}
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         DB_NAME: ${{ secrets.DB_NAME }}
-        DB_ECHO: ${{ secrets.DB_ECHO }}
+        DB_ECHO: 'TRUE'
         DB_POOL_SIZE: ${{ secrets.DB_POOL_SIZE }}
-        DB_MAX_OVERFLOW: ${{ secrets.DB_MAX_OVERFLOW }}
+        DB_MAX_OVERFLOW: '10'
         TUNNEL_SSH_HOST: ${{ secrets.SSH_HOST }}
         TUNNEL_SSH_PORT: ${{ secrets.SSH_PORT }}
         TUNNEL_SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
@@ -53,9 +53,9 @@ jobs:
           DB_ECHO=${DB_ECHO}
           DB_POOL_SIZE=${DB_POOL_SIZE}
           DB_MAX_OVERFLOW=${DB_MAX_OVERFLOW}
-          SSH_HOST=${SSH_HOST}
-          SSH_PORT=${SSH_PORT}
-          SSH_USERNAME=${SSH_USERNAME}
+          SSH_HOST=${TUNNEL_SSH_HOST}
+          SSH_PORT=${TUNNEL_SSH_PORT}
+          SSH_USERNAME=${TUNNEL_SSH_USERNAME}
           SSH_KEY_PATH=/home/${{ secrets.SSH_USERNAME }}/.ssh/project_ssh_key
           EOL
           
