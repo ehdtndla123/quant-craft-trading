@@ -26,7 +26,7 @@ jobs:
         TUNNEL_SSH_HOST: ${{ secrets.SSH_HOST }}
         TUNNEL_SSH_PORT: ${{ secrets.SSH_PORT }}
         TUNNEL_SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
-        PROJECT_SSH_KEY: ${{ secrets.PROJECT_SSH_KEY }}
+        PROJECT_SSH_KEY: ${{ secrets.SSH_SECRET_KEY }}
       with:
         host: ${{ secrets.DEPLOY_SSH_HOST }}
         username: ${{ secrets.DEPLOY_SSH_USERNAME }}
