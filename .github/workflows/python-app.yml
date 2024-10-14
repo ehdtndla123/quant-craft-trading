@@ -64,4 +64,6 @@ jobs:
           chmod 600 /home/${{ secrets.SSH_USERNAME }}/.ssh/project_ssh_key
 
           # pkill -f main.py
-          nohup python main.py > app.log 2>&1 &
+          
+          nohup python3 main.py > app.log 2>&1 &
+          tail -n 100 app.log
