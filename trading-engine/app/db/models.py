@@ -10,8 +10,8 @@ class Backtesting(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     strategy_name = Column(String, index=True)
-    start_date = Column(String)
-    end_date = Column(String)
+    start_date = Column(String, nullable=False)
+    end_date = Column(String, nullable=False)
     initial_capital = Column(Float)
     final_equity = Column(Float)
     total_return = Column(Float)
@@ -23,8 +23,10 @@ class Backtesting(Base):
     equity_curve = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    strategy_id = Column(Integer, ForeignKey("strategies.id"), index=True)
+    strategy_id = Column(Integer, ForeignKey("strategies.id"), index=True, nullable=False)
     strategy = relationship("Strategy", back_populates="backtestings")
+
+    user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
 
 
 class User(Base):

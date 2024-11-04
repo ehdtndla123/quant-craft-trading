@@ -18,6 +18,10 @@ def get_backtesting(db: Session, backtesting_id: int) -> Backtesting:
     return db.query(Backtesting).filter(Backtesting.id == backtesting_id).first()
 
 
+def get_backtestings_by_user(db: Session, user_id: int, skip: int = 0, limit: int = 100) -> List[Backtesting]:
+    return db.query(Backtesting).filter(Backtesting.user_id == user_id).offset(skip).limit(limit).all()
+
+
 def get_backtestings(db: Session, skip: int = 0, limit: int = 100) -> List[Backtesting]:
     return db.query(Backtesting).offset(skip).limit(limit).all()
 

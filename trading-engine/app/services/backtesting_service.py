@@ -10,7 +10,8 @@ from app.utils.backtest_encoder import BacktestEncoder
 from app.services.strategy_manager import StrategyManager
 
 
-def run(db: Session, data: Union[str, pd.DataFrame], strategy: Strategy, cash: float, commission: float, start_date: str,
+def run(db: Session, data: Union[str, pd.DataFrame], user_id: int, strategy: Strategy, cash: float, commission: float,
+        start_date: str,
         end_date: str) -> Backtesting:
     if isinstance(data, str):
         data = pd.read_csv(data, index_col=0, parse_dates=True)
@@ -24,6 +25,7 @@ def run(db: Session, data: Union[str, pd.DataFrame], strategy: Strategy, cash: f
     stats = bt.run()
 
     backtesting_data = BacktestingCreate(
+        user_id=user_id,
         strategy_id=strategy.id,
         strategy_name=strategy.name,
         start_date=start_date,
@@ -48,6 +50,10 @@ def get_backtesting(db: Session, backtesting_id: int) -> Backtesting:
 
 def get_backtestings(db: Session, skip: int = 0, limit: int = 100) -> List[Backtesting]:
     return backtesting_repository.get_backtestings(db, skip, limit)
+
+
+def get_backtestings_by_user(db: Session, user_id: int, skip: int = 0, limit: int = 100) -> List[Backtesting]:
+    return backtesting_repository.get_backtestings_by_user(db, user_id, skip, limit)
 
 
 def delete(db: Session, backtesting_id: int) -> bool:
