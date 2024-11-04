@@ -23,6 +23,11 @@ def read_backtestings(skip: int = 0, limit: int = 100, db: Session = Depends(get
     return backtesting_service.get_backtestings(db, skip=skip, limit=limit)
 
 
+@router.get("/backtestings/{user_id}", response_model=List[BacktestingResponse])
+def read_backtestings_by_user(user_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return backtesting_service.get_backtestings_by_user(db, user_id=user_id, skip=skip, limit=limit)
+
+
 # 논블로킹으로 해야함. 블로킹으로 하면 다른 요청을 처리하지 못함
 @router.post("/backtestings/run", response_model=BacktestingResponse)
 def run_backtest(request: BacktestRunRequest, db: Session = Depends(get_db)):
@@ -37,6 +42,7 @@ def run_backtest(request: BacktestRunRequest, db: Session = Depends(get_db)):
         result = backtesting_service.run(
             db,
             data,
+            request.user_id,
             strategy,
             request.cash,
             request.commission,

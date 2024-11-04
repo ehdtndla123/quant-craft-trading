@@ -8,9 +8,11 @@ from app.repositories import backtesting_repository
 import json
 from app.utils.backtest_encoder import BacktestEncoder
 from app.services.strategy_manager import StrategyManager
+import math
 
 
-def run(db: Session, data: Union[str, pd.DataFrame], strategy: Strategy, cash: float, commission: float, start_date: str,
+def run(db: Session, data: Union[str, pd.DataFrame], user_id: int, strategy: Strategy, cash: float, commission: float,
+        start_date: str,
         end_date: str) -> Backtesting:
     if isinstance(data, str):
         data = pd.read_csv(data, index_col=0, parse_dates=True)
@@ -24,22 +26,31 @@ def run(db: Session, data: Union[str, pd.DataFrame], strategy: Strategy, cash: f
     stats = bt.run()
 
     backtesting_data = BacktestingCreate(
+        user_id=user_id,
         strategy_id=strategy.id,
         strategy_name=strategy.name,
         start_date=start_date,
         end_date=end_date,
         initial_capital=cash,
-        final_equity=float(stats['Equity Final [$]']),
-        total_return=float(stats['Return [%]']),
-        max_drawdown=float(stats['Max. Drawdown [%]']),
-        win_rate=float(stats['Win Rate [%]']),
-        profit_factor=float(stats['Profit Factor']),
-        total_trades=int(stats['# Trades']),
+        final_equity=get_safe_float(stats['Equity Final [$]'], default=cash),  # 초기 자본으로 default
+        total_return=get_safe_float(stats['Return [%]']),
+        max_drawdown=get_safe_float(stats['Max. Drawdown [%]']),
+        win_rate=get_safe_float(stats['Win Rate [%]']),  # 거래 없으면 0%
+        profit_factor=get_safe_float(stats['Profit Factor'], default=1.0),  # 거래 없으면 1.0
+        total_trades=int(stats.get('# Trades', 0)),  # 거래 없으면 0
         trades=json.dumps(stats.get('_trades', []), cls=BacktestEncoder),
         equity_curve=json.dumps(stats.get('_equity_curve', pd.DataFrame()), cls=BacktestEncoder)
     )
 
     return backtesting_repository.create_backtesting(db, backtesting_data)
+
+
+def get_safe_float(value, default=0.0):
+    try:
+        result = float(value)
+        return result if not math.isnan(result) and not math.isinf(result) else default
+    except (ValueError, TypeError):
+        return default
 
 
 def get_backtesting(db: Session, backtesting_id: int) -> Backtesting:
@@ -48,6 +59,10 @@ def get_backtesting(db: Session, backtesting_id: int) -> Backtesting:
 
 def get_backtestings(db: Session, skip: int = 0, limit: int = 100) -> List[Backtesting]:
     return backtesting_repository.get_backtestings(db, skip, limit)
+
+
+def get_backtestings_by_user(db: Session, user_id: int, skip: int = 0, limit: int = 100) -> List[Backtesting]:
+    return backtesting_repository.get_backtestings_by_user(db, user_id, skip, limit)
 
 
 def delete(db: Session, backtesting_id: int) -> bool:

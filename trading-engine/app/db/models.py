@@ -10,8 +10,8 @@ class Backtesting(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     strategy_name = Column(String, index=True)
-    start_date = Column(String)
-    end_date = Column(String)
+    start_date = Column(String, nullable=False)
+    end_date = Column(String, nullable=False)
     initial_capital = Column(Float)
     final_equity = Column(Float)
     total_return = Column(Float)
@@ -23,8 +23,10 @@ class Backtesting(Base):
     equity_curve = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    strategy_id = Column(Integer, ForeignKey("strategies.id"), index=True)
+    strategy_id = Column(Integer, ForeignKey("strategies.id"), index=True, nullable=False)
     strategy = relationship("Strategy", back_populates="backtestings")
+
+    user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
 
 
 class User(Base):
@@ -33,7 +35,7 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     trading_bots = relationship("TradingBot", back_populates="user")
-    exchange_api_keys = relationship("ExchangeApiKey", back_populates="user")
+    # exchange_api_keys = relationship("ExchangeApiKey", back_populates="user")
 
 
 class Strategy(Base):
@@ -76,7 +78,7 @@ class TradingBot(Base):
     user = relationship("User", back_populates="trading_bots")
 
     exchange_api_key_id = Column(BigInteger, ForeignKey('exchange_api_keys.id'))
-    exchange_api_key = relationship("ExchangeApiKey", back_populates="trading_bots")
+    # exchange_api_key = relationship("ExchangeApiKey", back_populates="trading_bots")
 
     strategy_id = Column(BigInteger, ForeignKey('strategies.id'))
     strategy = relationship("Strategy", back_populates="trading_bots")
@@ -88,17 +90,17 @@ class TradingBot(Base):
     }
 
 
-class ExchangeApiKey(Base):
-    __tablename__ = "exchange_api_keys"
-
-    id = Column(BigInteger, primary_key=True, index=True)
-    exchange_type = Column(String)
-    api_key = Column(String)
-    secret_key = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
-    user_id = Column(BigInteger, ForeignKey('users.id'))
-    user = relationship("User", back_populates="exchange_api_keys")
-
-    trading_bots = relationship("TradingBot", back_populates="exchange_api_key")
+# class ExchangeApiKey(Base):
+#     __tablename__ = "exchange_api_keys"
+#
+#     id = Column(BigInteger, primary_key=True, index=True)
+#     exchange = Column(String)
+#     api_key = Column(String)
+#     secret_key = Column(String)
+#     created_at = Column(DateTime(timezone=True), server_default=func.now())
+#     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+#
+#     user_id = Column(BigInteger, ForeignKey('users.id'))
+#     user = relationship("User", back_populates="exchange_api_keys")
+#
+#     trading_bots = relationship("TradingBot", back_populates="exchange_api_key")

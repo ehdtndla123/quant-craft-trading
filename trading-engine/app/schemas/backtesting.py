@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 
 class BacktestingBase(BaseModel):
+    user_id: int
     strategy_id: int
     strategy_name: str
     start_date: str
@@ -31,6 +32,7 @@ class BacktestingResponse(BacktestingCreate):
 
 
 class BacktestRunRequest(BaseModel):
+    user_id: int
     start_date: str
     end_date: str
     strategy_id: int
