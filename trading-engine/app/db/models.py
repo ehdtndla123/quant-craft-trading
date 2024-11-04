@@ -77,7 +77,7 @@ class TradingBot(Base):
     user_id = Column(BigInteger, ForeignKey('users.id'))
     user = relationship("User", back_populates="trading_bots")
 
-    # exchange_api_key_id = Column(BigInteger, ForeignKey('exchange_api_keys.id'))
+    exchange_api_key_id = Column(BigInteger)
     # exchange_api_key = relationship("ExchangeApiKey", back_populates="trading_bots")
 
     strategy_id = Column(BigInteger, ForeignKey('strategies.id'))
