@@ -1,0 +1,25 @@
+name: Deploy Data Collector Application
+on:
+  push:
+    branches: [ "data" ]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+    - name: Deploy to production
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.DEPLOY_SSH_HOST }}
+        username: ${{ secrets.DEPLOY_SSH_USERNAME }}
+        key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+        script: |
+          cd ~/data/quant-craft-trading
+          git pull origin data
+          cd data-collecter
+          cp ~/data/config.yaml .
+          # Install requirements
+          pip install -r requirements.txt
+          
+          nohup python3 main.py > app.log 2>&1 &
+          tail -n 100 app.log
