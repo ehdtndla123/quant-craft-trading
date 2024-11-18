@@ -47,7 +47,6 @@ pip install -r requirements.txt
 python main.py
 ```
 
-
 # Description
 - 코인 관련 데이터를 수집하는 서버입니다.
 - 코인 관련 데이터를 수집하여 Kafka에 전송합니다.
