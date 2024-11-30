@@ -1,5 +1,5 @@
 from sqladmin import Admin, ModelView
-from app.db.models import Strategy, TradingBot, User, Backtesting
+from app.db.models import Strategy, TradingBot, Backtesting
 from app.db.database import engine
 
 
@@ -11,8 +11,8 @@ class TradingBotAdmin(ModelView, model=TradingBot):
     column_list = [TradingBot.id, TradingBot.strategy_id, TradingBot.user_id, TradingBot.cash]
 
 
-class UserAdmin(ModelView, model=User):
-    column_list = [User.id, User.username]
+# class UserAdmin(ModelView, model=User):
+#     column_list = [User.id, User.username]
 
 
 class BacktestingAdmin(ModelView, model=Backtesting):
@@ -52,5 +52,5 @@ def setup_admin(app):
     admin = Admin(app, engine)
     admin.add_view(StrategyAdmin)
     admin.add_view(TradingBotAdmin)
-    admin.add_view(UserAdmin)
+    # admin.add_view(UserAdmin)
     admin.add_view(BacktestingAdmin)

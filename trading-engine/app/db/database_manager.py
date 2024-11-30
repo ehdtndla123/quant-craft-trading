@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from app.core.config import settings
@@ -47,9 +47,9 @@ class DatabaseManager:
     def create_engine(self):
         encoded_password = quote_plus(settings.DB_PASSWORD)
         if self.use_ssh_tunnel:
-            DATABASE_URL = f"postgresql://{settings.DB_USERNAME}:{encoded_password}@{settings.DB_HOST}:{self.tunnel.local_bind_port}/{settings.DB_NAME}"
+            DATABASE_URL = f"postgresql://{settings.DB_USERNAME}:{encoded_password}@{settings.DB_HOST}:{self.tunnel.local_bind_port}/{settings.DB_NAME}?options=-csearch_path%3Dtrading"
         else:
-            DATABASE_URL = f"postgresql://{settings.DB_USERNAME}:{encoded_password}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+            DATABASE_URL = f"postgresql://{settings.DB_USERNAME}:{encoded_password}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}?options=-csearch_path%3Dtrading"
         return create_engine(DATABASE_URL, echo=settings.DB_ECHO, pool_size=settings.DB_POOL_SIZE,
                              max_overflow=settings.DB_MAX_OVERFLOW)
 
@@ -66,8 +66,11 @@ class DatabaseManager:
 
     def init_db(self):
         pass
-        # self.Base.metadata.drop_all(bind=self.engine)
-        # self.Base.metadata.create_all(bind=self.engine)
+        with self.engine.connect() as conn:
+            conn.execute(text('CREATE SCHEMA IF NOT EXISTS trading'))
+            conn.commit()
+        self.Base.metadata.drop_all(bind=self.engine)
+        self.Base.metadata.create_all(bind=self.engine)
 
     def initialize_database(self):
         self.init_db()
