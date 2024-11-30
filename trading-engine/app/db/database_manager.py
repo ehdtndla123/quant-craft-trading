@@ -69,7 +69,7 @@ class DatabaseManager:
         with self.engine.connect() as conn:
             conn.execute(text('CREATE SCHEMA IF NOT EXISTS trade'))
             conn.commit()
-        self.Base.metadata.drop_all(bind=self.engine)
+        # self.Base.metadata.drop_all(bind=self.engine)
         self.Base.metadata.create_all(bind=self.engine)
 
     def initialize_database(self):
