@@ -25,16 +25,16 @@ class Backtesting(Base):
 
     strategy_id = Column(Integer, ForeignKey("strategies.id"), index=True, nullable=False)
     strategy = relationship("Strategy", back_populates="backtestings")
+    user_id = Column(BigInteger)
+    # user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
 
-    user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
 
-
-class User(Base):
-    __tablename__ = "users"
-    id = Column(BigInteger, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    trading_bots = relationship("TradingBot", back_populates="user")
+# class User(Base):
+#     __tablename__ = "users"
+#     id = Column(BigInteger, primary_key=True, index=True)
+#     username = Column(String, unique=True, index=True)
+#     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    # trading_bots = relationship("TradingBot", back_populates="user")
     # exchange_api_keys = relationship("ExchangeApiKey", back_populates="user")
 
 
@@ -74,8 +74,9 @@ class TradingBot(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     status = Column(Enum(TradingBotStatus))
 
-    user_id = Column(BigInteger, ForeignKey('users.id'))
-    user = relationship("User", back_populates="trading_bots")
+    # user_id = Column(BigInteger, ForeignKey('users.id'))
+    user_id = Column(BigInteger)
+    # user = relationship("User", back_populates="trading_bots")
 
     exchange_api_key_id = Column(BigInteger)
     # exchange_api_key = relationship("ExchangeApiKey", back_populates="trading_bots")

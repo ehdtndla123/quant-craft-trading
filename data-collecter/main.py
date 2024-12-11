@@ -115,11 +115,32 @@ class DataCollector:
     async def add_collector(self, exchange_name, symbol, data_type):
         collector_class = self.get_collector_class(exchange_name, data_type)
         if collector_class:
-            collector = collector_class(symbol, self.config['kafka']['bootstrap_servers'],
-                                        self.topics[data_type], self.db_manager)
+            if data_type == 'generic':
+                exchange = self.exchanges.get(exchange_name)
+
+                collector = collector_class(
+                    exchange=exchange,
+                    exchange_name=exchange_name,
+                    symbol=symbol,
+                    kafka_bootstrap_servers=self.config['kafka']['bootstrap_servers'],
+                    topic=self.topics[data_type],
+                    db_manager=self.db_manager
+                )
+            else:
+                collector = collector_class(
+                    symbol,
+                    self.config['kafka']['bootstrap_servers'],
+                    self.topics[data_type],
+                    self.db_manager
+                )
+
             self.collectors[(exchange_name, symbol, data_type)] = collector
-            self.collector_statuses[(exchange_name, symbol, data_type)] = CollectorStatus(collector, exchange_name,
-                                                                                          symbol, data_type)
+            self.collector_statuses[(exchange_name, symbol, data_type)] = CollectorStatus(
+                collector,
+                exchange_name,
+                symbol,
+                data_type
+            )
             self.tasks.append(asyncio.create_task(collector.run()))
             logging.info(f"Collector 추가: {exchange_name} - {symbol} - {data_type}")
 
@@ -133,6 +154,10 @@ class DataCollector:
         logging.info(f"Collector 제거: {collector_key}")
 
     def get_collector_class(self, exchange_name, data_type):
+        if data_type == 'generic':
+            from data_collectors.generic_exchange_market_data import GenericExchangeMarketData
+            return GenericExchangeMarketData
+
         module_name = f"data_collectors.{exchange_name}_{data_type}"
         class_name = f"{exchange_name.capitalize()}{data_type.replace('_', ' ').title().replace(' ', '')}"
         try:
