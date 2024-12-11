@@ -21,7 +21,6 @@ class GenericExchangeMarketData(BaseCollector):
 
     async def process_data(self, message):
         try:
-            self.logger.info(f"Processing OHLCV data: {message['ohlcv']}")
             ohlcv = message['ohlcv'][0]
             kafka_data = {
                 'exchange': self.exchange_name,
