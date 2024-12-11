@@ -133,6 +133,10 @@ class DataCollector:
         logging.info(f"Collector 제거: {collector_key}")
 
     def get_collector_class(self, exchange_name, data_type):
+        if data_type == 'generic':
+            from data_collectors.generic_exchange_market_data import GenericExchangeMarketData
+            return GenericExchangeMarketData
+
         module_name = f"data_collectors.{exchange_name}_{data_type}"
         class_name = f"{exchange_name.capitalize()}{data_type.replace('_', ' ').title().replace(' ', '')}"
         try:
