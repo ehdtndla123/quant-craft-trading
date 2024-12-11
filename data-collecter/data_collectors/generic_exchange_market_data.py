@@ -1,73 +1,74 @@
 import asyncio
 from .base_collector import BaseCollector
+from influxdb_client import Point, WritePrecision
 
 
 class GenericExchangeMarketData(BaseCollector):
-    def __init__(self, exchange, exchange_name, symbol, producer, topic):
-        super().__init__(symbol, producer, topic)
+    def __init__(self, exchange, exchange_name, symbol, kafka_bootstrap_servers, topic, db_manager=None):
+        super().__init__(symbol, kafka_bootstrap_servers, topic, db_manager)
         self.exchange = exchange
         self.exchange_name = exchange_name
-        self.is_running = False
 
-    async def start(self):
-        self.is_running = True
-        tasks = [
-            self.collect_trades(),
-            self.collect_orderbook(),
-            self.collect_ohlcv()
-        ]
-        await asyncio.gather(*tasks)
+    async def fetch_data(self):
+        try:
+            ohlcv = await self.exchange.watch_ohlcv(self.symbol, '1m')
+            return {
+                'ohlcv': ohlcv
+            }
+        except Exception as e:
+            self.logger.error(f"Error fetching data for {self.exchange_name} {self.symbol}: {e}")
+            return None
 
-    async def collect_trades(self):
-        while self.is_running:
-            try:
-                trades = await self.exchange.watch_trades(self.symbol)
-                for trade in trades:
-                    data = {
-                        'exchange': self.exchange_name,
-                        'symbol': self.symbol,
-                        'type': 'trade',
-                        'data': trade
-                    }
-                    self.producer.send(self.topic['trade'], data)
-            except Exception as e:
-                print(f"Error watching trades for {self.exchange_name} {self.symbol}: {e}")
-                await asyncio.sleep(5)
+    async def process_data(self, message):
+        try:
+            self.logger.info(f"Processing OHLCV data: {message['ohlcv']}")
+            ohlcv = message['ohlcv'][0]
+            kafka_data = {
+                'exchange': self.exchange_name,
+                'symbol': self.symbol,
+                'type': 'ohlcv',
+                'timestamp': ohlcv[0],
+                'open': ohlcv[1],
+                'high': ohlcv[2],
+                'low': ohlcv[3],
+                'close': ohlcv[4],
+                'volume': ohlcv[5]
+            }
+            await self.send_to_kafka(kafka_data)
 
-    async def collect_orderbook(self):
-        while self.is_running:
-            try:
-                orderbook = await self.exchange.watch_order_book(self.symbol)
-                data = {
-                    'exchange': self.exchange_name,
-                    'symbol': self.symbol,
-                    'type': 'orderbook',
-                    'data': orderbook
-                }
-                self.producer.send(self.topic['orderbook'], data)
-            except Exception as e:
-                print(f"Error watching orderbook for {self.exchange_name} {self.symbol}: {e}")
-                await asyncio.sleep(5)
+            if self.db_manager:
+                point = Point("ohlcv") \
+                    .tag("exchange", self.exchange_name) \
+                    .tag("symbol", self.symbol) \
+                    .field("open", float(ohlcv[1])) \
+                    .field("high", float(ohlcv[2])) \
+                    .field("low", float(ohlcv[3])) \
+                    .field("close", float(ohlcv[4])) \
+                    .field("volume", float(ohlcv[5])) \
+                    .time(ohlcv[0], WritePrecision.MS)
+                await self.store_to_influxdb(point)
 
-    async def collect_ohlcv(self):
-        while self.is_running:
-            try:
-                ohlcv = await self.exchange.watch_ohlcv(self.symbol, '1m')
-                data = {
-                    'exchange': self.exchange_name,
-                    'symbol': self.symbol,
-                    'type': 'ohlcv',
-                    'timestamp': ohlcv[0][0],
-                    'open': ohlcv[0][1],
-                    'high': ohlcv[0][2],
-                    'low': ohlcv[0][3],
-                    'close': ohlcv[0][4],
-                    'volume': ohlcv[0][5]
-                }
-                self.producer.send(self.topic['ohlcv'], data)
-            except Exception as e:
-                print(f"Error watching OHLCV for {self.exchange_name} {self.symbol}: {e}")
-                await asyncio.sleep(5)
+        except Exception as e:
+            self.logger.error(f"Error in process_data: {e}", exc_info=True)
+            raise
+
+    def get_interval(self):
+        return 0
 
     async def stop(self):
         self.is_running = False
+        await super().stop()
+        self.logger.info(f"Generic Exchange 연결 종료 : {self.symbol}")
+
+    async def run(self):
+        await self.initialize()
+        self.is_running = True
+
+        while self.is_running:
+            try:
+                data = await self.fetch_data()
+                if data:
+                    await self.process_data(data)
+            except Exception as e:
+                self.logger.error(f"데이터 수집 중 오류 발생: {e}")
+            await asyncio.sleep(self.get_interval())
